@@ -1,0 +1,21 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "Running pre-commit hooks..."
+
+# Run linter
+npm run lint
+if [ $? -ne 0 ]; then
+  echo "Linting failed. Please fix lint errors before committing."
+  exit 1
+fi
+
+# Run tests
+npm test
+if [ $? -ne 0 ]; then
+  echo "Tests failed. Please fix tests before committing."
+  exit 1
+fi
+
+echo "Pre-commit checks passed."
+exit 0

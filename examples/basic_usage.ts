@@ -1,0 +1,139 @@
+// examples/basic_usage.ts
+
+// Import necessary classes and types from the SDK
+// Adjust the import path based on how you install/use the SDK (e.g., 'cyberware-node-sdk' or '../dist')
+import {
+  CyberwareClient,
+  TextAnalysisRequest,
+  AudioAnalysisRequest,
+  AnalysisTaskResponse,
+  CyberwareApiError,
+  CyberwareAuthenticationError,
+  CyberwareBadRequestError,
+} from '../src'; // Using relative path to src for local testing
+
+// --- Configuration ---
+
+// IMPORTANT: Load your API key securely! Never hardcode it.
+// Use environment variables or a secret management system.
+const apiKey = process.env.CYBERWARE_API_KEY;
+
+if (!apiKey) {
+  console.error(
+    'Error: CYBERWARE_API_KEY environment variable is not set.',
+    'Please set it before running the example.',
+  );
+  process.exit(1);
+}
+
+// Optional: Configure client options
+const clientOptions = {
+  timeout: 15000, // Set a 15-second timeout
+  debug: false, // Set to true to see request/error logs
+};
+
+// Initialize the client
+const client = new CyberwareClient(apiKey, clientOptions);
+
+console.log('Cyberware Client Initialized.');
+
+// --- Example Data ---
+
+const gameId = 'your-actual-game-id'; // Replace with a valid Game ID
+const serverId = 'server-123'; // Optional server ID
+
+// --- Main Function ---
+
+async function runExamples() {
+  console.log('\n--- Running Text Analysis Example ---');
+  try {
+    const textRequest: TextAnalysisRequest = {
+      game_id: gameId,
+      text: 'This interaction was really positive and helpful!',
+      server_id: serverId,
+    };
+    console.log('Submitting text analysis request:', textRequest);
+    const textResponse: AnalysisTaskResponse =
+      await client.analyzeText(textRequest);
+    console.log('Text Analysis Task Accepted:');
+    console.log(`  Message: ${textResponse.message}`);
+    console.log(`  Sentiment Data ID: ${textResponse.sentiment_data_id}`);
+  } catch (error) {
+    handleApiError('Text Analysis', error);
+  }
+
+  console.log('\n--- Running Audio Analysis Example ---');
+  try {
+    // Example: Base64 encode a simple dummy audio file content (replace with real data)
+    const dummyAudioContent = 'This is simulated audio content.';
+    const audioBase64 = Buffer.from(dummyAudioContent).toString('base64');
+
+    const audioRequest: AudioAnalysisRequest = {
+      game_id: gameId,
+      audio_base64: audioBase64,
+      server_id: serverId,
+    };
+    console.log('Submitting audio analysis request (with dummy data):');
+    const audioResponse: AnalysisTaskResponse =
+      await client.analyzeAudio(audioRequest);
+    console.log('Audio Analysis Task Accepted:');
+    console.log(`  Message: ${audioResponse.message}`);
+    console.log(`  Sentiment Data ID: ${audioResponse.sentiment_data_id}`);
+  } catch (error) {
+    handleApiError('Audio Analysis', error);
+  }
+
+  // Example of handling a specific error (e.g., bad request)
+  console.log('\n--- Running Bad Request Example ---');
+  try {
+    const badTextRequest: TextAnalysisRequest = {
+      game_id: gameId,
+      // Missing 'text' field intentionally
+    } as TextAnalysisRequest;
+    console.log('Submitting bad text request:', badTextRequest);
+    await client.analyzeText(badTextRequest);
+  } catch (error) {
+    handleApiError('Bad Text Request', error);
+  }
+}
+
+// --- Helper Function for Error Handling ---
+
+function handleApiError(context: string, error: unknown) {
+  console.error(`Error during ${context}:`);
+  if (error instanceof CyberwareAuthenticationError) {
+    console.error(
+      `  Authentication Failed (Status: ${error.status}): ${error.message}`,
+    );
+    console.error('  >> Check if your API key is correct and active.');
+  } else if (error instanceof CyberwareBadRequestError) {
+    console.error(`  Bad Request (Status: ${error.status}): ${error.message}`);
+    console.error(
+      '  >> Check the request payload for missing or invalid fields.',
+    );
+    if (error.responseData) {
+      console.error('  >> API Response:', error.responseData);
+    }
+  } else if (error instanceof CyberwareApiError) {
+    console.error(
+      `  API Error (Status: ${error.status || 'N/A'}): ${error.message}`,
+    );
+    if (error.responseData) {
+      console.error('  >> API Response:', error.responseData);
+    }
+  } else {
+    // Catch unexpected non-API errors (e.g., network issues before request)
+    console.error('  An unexpected error occurred:', error);
+  }
+}
+
+// --- Run the examples ---
+
+runExamples()
+  .then(() => {
+    console.log('\nExample script finished.');
+  })
+  .catch((err) => {
+    console.error('\nCritical error running example script:', err);
+    process.exit(1);
+  });
