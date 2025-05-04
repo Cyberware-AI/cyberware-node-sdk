@@ -17,7 +17,7 @@ import {
 } from './errors';
 
 // Use the actual production URL (ensure it's correct)
-const PRODUCTION_BASE_URL = 'https://api.cyberware.ai/api/v1';
+const PRODUCTION_BASE_URL = 'http://localhost:8080/api/v1'; //'https://api.cyberware.ai/api/v1';
 const DEFAULT_TIMEOUT = 10000; // 10 seconds
 const DEFAULT_RETRIES = 3;
 

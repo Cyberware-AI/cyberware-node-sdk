@@ -11,10 +11,9 @@ import {
   AudioAnalysisRequest,
   AnalysisTaskResponse,
 } from '../src'; // Import from the main entry point
-import { Readable } from 'stream';
 
 // Define the production base URL consistently with src/client.ts
-const PRODUCTION_BASE_URL = 'https://api.cyberware.ai/api/v1';
+const LOCAL_TEST_URL = 'http://localhost:8080/api/v1'; // Use localhost for testing as requested
 const TEST_API_KEY = 'test-api-key';
 const SENTIMENT_TEXT_PATH = '/sentiment/text';
 const SENTIMENT_AUDIO_PATH = '/sentiment/audio';
@@ -45,7 +44,7 @@ describe('CyberwareClient', () => {
     it('should create an axios instance with correct defaults', () => {
       const defaultClient = new CyberwareClient(TEST_API_KEY);
       // @ts-expect-error Accessing private client for testing purposes
-      expect(defaultClient.client.defaults.baseURL).toBe(PRODUCTION_BASE_URL); // Check production URL
+      expect(defaultClient.client.defaults.baseURL).toBe(LOCAL_TEST_URL); // Check localhost URL
       // @ts-expect-error Accessing private client for testing purposes
       expect(defaultClient.client.defaults.headers['X-API-KEY']).toBe(
         TEST_API_KEY,
@@ -59,7 +58,7 @@ describe('CyberwareClient', () => {
         timeout: 5000,
       });
       // @ts-expect-error Accessing private client for testing purposes
-      expect(customClient.client.defaults.baseURL).toBe(PRODUCTION_BASE_URL); // Check production URL
+      expect(customClient.client.defaults.baseURL).toBe(LOCAL_TEST_URL); // Check localhost URL
       // @ts-expect-error Accessing private client for testing purposes
       expect(customClient.client.defaults.timeout).toBe(5000);
       // @ts-expect-error Accessing private client for testing purposes
@@ -97,7 +96,7 @@ describe('CyberwareClient', () => {
     });
 
     it('should make a POST request to /sentiment/text with correct data and headers', async () => {
-      const scope = nock(PRODUCTION_BASE_URL) // Use production URL
+      const scope = nock(LOCAL_TEST_URL) // Use localhost URL
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .post(SENTIMENT_TEXT_PATH, validRequest as any)
         .matchHeader('X-API-KEY', TEST_API_KEY)
@@ -109,7 +108,7 @@ describe('CyberwareClient', () => {
     });
 
     it('should return the AnalysisTaskResponse on successful submission (202)', async () => {
-      nock(PRODUCTION_BASE_URL) // Use production URL
+      nock(LOCAL_TEST_URL) // Use localhost URL
         .post(SENTIMENT_TEXT_PATH)
         .reply(202, mockAcceptedResponse);
 
@@ -148,7 +147,7 @@ describe('CyberwareClient', () => {
     });
 
     it('should make a POST request to /sentiment/audio with correct data and headers', async () => {
-      const scope = nock(PRODUCTION_BASE_URL) // Use production URL
+      const scope = nock(LOCAL_TEST_URL) // Use localhost URL
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .post(SENTIMENT_AUDIO_PATH, validRequest as any)
         .matchHeader('X-API-KEY', TEST_API_KEY)
@@ -160,7 +159,7 @@ describe('CyberwareClient', () => {
     });
 
     it('should return the AnalysisTaskResponse on successful submission (202)', async () => {
-      nock(PRODUCTION_BASE_URL) // Use production URL
+      nock(LOCAL_TEST_URL) // Use localhost URL
         .post(SENTIMENT_AUDIO_PATH)
         .reply(202, mockAcceptedResponse);
 
@@ -222,7 +221,7 @@ describe('CyberwareClient', () => {
 
     testCases.forEach(({ status, errorClass, message }) => {
       it(`should throw ${errorClass.name} for status ${status}`, async () => {
-        const scope = nock(PRODUCTION_BASE_URL) // Use production URL
+        const scope = nock(LOCAL_TEST_URL) // Use localhost URL
           .post(SENTIMENT_TEXT_PATH)
           .reply(status, errorResponse);
         let caughtError: unknown = null;
@@ -247,7 +246,7 @@ describe('CyberwareClient', () => {
     });
 
     it('should throw CyberwareApiError for unexpected network errors', async () => {
-      const scope = nock(PRODUCTION_BASE_URL) // Use production URL
+      const scope = nock(LOCAL_TEST_URL) // Use localhost URL
         .post(SENTIMENT_TEXT_PATH)
         .replyWithError('Network failure');
       let caughtError: unknown = null;
@@ -268,7 +267,7 @@ describe('CyberwareClient', () => {
 
     it('should throw CyberwareApiError for unexpected status codes', async () => {
       const errorData = { error: "I'm a teapot" };
-      const scope = nock(PRODUCTION_BASE_URL) // Use production URL
+      const scope = nock(LOCAL_TEST_URL) // Use localhost URL
         .post(SENTIMENT_TEXT_PATH)
         .reply(418, errorData);
       let caughtError: unknown = null;
@@ -303,7 +302,7 @@ describe('CyberwareClient', () => {
         message: 'Task accepted after retry',
         sentiment_data_id: 'retry-uuid-789',
       };
-      const scope = nock(PRODUCTION_BASE_URL) // Use production URL
+      const scope = nock(LOCAL_TEST_URL) // Use localhost URL
         .post(SENTIMENT_TEXT_PATH) // First attempt
         .reply(503, { error: 'Service Unavailable' })
         .post(SENTIMENT_TEXT_PATH) // Second attempt (after retry)
@@ -315,7 +314,7 @@ describe('CyberwareClient', () => {
     });
 
     it('should fail after exhausting retries on persistent 500 error', async () => {
-      const scope = nock(PRODUCTION_BASE_URL) // Use production URL
+      const scope = nock(LOCAL_TEST_URL) // Use localhost URL
         .post(SENTIMENT_TEXT_PATH)
         .times(4)
         .reply(500, { error: 'Internal Server Error' });
@@ -359,10 +358,10 @@ describe('CyberwareClient', () => {
     });
 
     it('should not log requests or errors by default', async () => {
-      nock(PRODUCTION_BASE_URL).post(SENTIMENT_TEXT_PATH).reply(202, {}); // Reply 202 now
+      nock(LOCAL_TEST_URL).post(SENTIMENT_TEXT_PATH).reply(202, {}); // Reply 202 now
       await client.analyzeText(textRequest);
 
-      nock(PRODUCTION_BASE_URL) // Use production URL
+      nock(LOCAL_TEST_URL) // Use localhost URL
         .post(SENTIMENT_TEXT_PATH)
         .reply(500, { error: 'fail' });
       await expect(client.analyzeText(textRequest)).rejects.toThrow();
@@ -377,7 +376,7 @@ describe('CyberwareClient', () => {
       });
 
       // Test logging on success
-      nock(PRODUCTION_BASE_URL) // Use production URL
+      nock(LOCAL_TEST_URL) // Use localhost URL
         .post(SENTIMENT_TEXT_PATH)
         .reply(202, { message: 'ok', sentiment_data_id: 'dbg-1' }); // Reply 202
       await debugClient.analyzeText(textRequest);
@@ -393,9 +392,7 @@ describe('CyberwareClient', () => {
 
       // Test logging on error
       const errorResponse = { error: 'debug fail' };
-      nock(PRODUCTION_BASE_URL)
-        .post(SENTIMENT_TEXT_PATH)
-        .reply(400, errorResponse); // Use production URL
+      nock(LOCAL_TEST_URL).post(SENTIMENT_TEXT_PATH).reply(400, errorResponse); // Use production URL
       await expect(debugClient.analyzeText(textRequest)).rejects.toThrow();
       expect(consoleLogSpy).toHaveBeenCalledWith(
         'Cyberware SDK Request:',

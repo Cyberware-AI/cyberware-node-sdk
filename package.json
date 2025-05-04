@@ -1,6 +1,6 @@
 {
-  "name": "cyberware-node-sdk",
-  "version": "0.1.0",
+  "name": "@cyberware-ai/node-sdk",
+  "version": "0.1.1",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -15,7 +15,12 @@
     "cyberware",
     "api",
     "sdk",
-    "sentiment"
+    "sentiment",
+    "analysis",
+    "ai",
+    "text",
+    "audio",
+    "sentiment-analysis"
   ],
   "author": "Rami Borni",
   "license": "Apache-2.0",
@@ -37,8 +42,8 @@
     "@types/nock": "^11.1.0",
     "@types/node": "^20.14.9",
     "@types/node-telegram-bot-api": "^0.64.8",
-    "@typescript-eslint/eslint-plugin": "^7.15.0",
-    "@typescript-eslint/parser": "^7.15.0",
+    "@typescript-eslint/eslint-plugin": "^8.31.1",
+    "@typescript-eslint/parser": "^8.31.1",
     "discord.js": "^14.18.0",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
