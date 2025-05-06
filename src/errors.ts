@@ -4,9 +4,9 @@
  */
 export class CyberwareApiError extends Error {
   /** The HTTP status code associated with the error, if applicable. */
-  public readonly status?: number;
+  public status?: number;
   /** The raw response data received from the API, if available. */
-  public readonly responseData?: unknown;
+  public responseData?: unknown;
 
   /**
    * Creates an instance of CyberwareApiError.
@@ -16,13 +16,16 @@ export class CyberwareApiError extends Error {
    */
   constructor(message: string, status?: number, responseData?: unknown) {
     super(message);
-    this.name = this.constructor.name;
+    this.name = 'CyberwareApiError'; // Set name for the base error
+
     this.status = status;
     this.responseData = responseData;
+
+    // The following lines (original 25-29) for this.constructor.name and captureStackTrace remain commented out
     // Maintains proper stack trace for where our error was thrown (only available on V8)
-    if (typeof (Error as any).captureStackTrace === 'function') {
-      (Error as any).captureStackTrace(this, this.constructor);
-    }
+    // if (typeof (Error as any).captureStackTrace === 'function') {
+    //   (Error as any).captureStackTrace(this, this.constructor);
+    // }
   }
 }
 
@@ -38,6 +41,24 @@ export class CyberwareAuthenticationError extends CyberwareApiError {
    */
   constructor(message = 'Invalid API key', responseData?: unknown) {
     super(message, 401, responseData);
+    Object.setPrototypeOf(this, CyberwareAuthenticationError.prototype);
+    this.name = 'CyberwareAuthenticationError';
+  }
+}
+/**
+ * Error indicating the user is authenticated but not authorized to perform the action.
+ * Corresponds to HTTP 403 Forbidden.
+ */
+export class CyberwareForbiddenError extends CyberwareApiError {
+  /**
+   * Creates an instance of CyberwareForbiddenError.
+   * @param message The error message (defaults to 'Forbidden').
+   * @param responseData The raw API response data (optional).
+   */
+  constructor(message = 'Forbidden', responseData?: unknown) {
+    super(message, 403, responseData);
+    Object.setPrototypeOf(this, CyberwareForbiddenError.prototype);
+    this.name = 'CyberwareForbiddenError';
   }
 }
 
@@ -53,6 +74,8 @@ export class CyberwareBadRequestError extends CyberwareApiError {
    */
   constructor(message = 'Bad request', responseData?: unknown) {
     super(message, 400, responseData);
+    Object.setPrototypeOf(this, CyberwareBadRequestError.prototype);
+    this.name = 'CyberwareBadRequestError';
   }
 }
 
@@ -68,6 +91,8 @@ export class CyberwareNotFoundError extends CyberwareApiError {
    */
   constructor(message = 'Resource not found', responseData?: unknown) {
     super(message, 404, responseData);
+    Object.setPrototypeOf(this, CyberwareNotFoundError.prototype);
+    this.name = 'CyberwareNotFoundError';
   }
 }
 
@@ -88,6 +113,8 @@ export class CyberwareServerError extends CyberwareApiError {
     responseData?: unknown,
   ) {
     super(message, status, responseData);
+    Object.setPrototypeOf(this, CyberwareServerError.prototype);
+    this.name = 'CyberwareServerError';
   }
 }
 
@@ -103,5 +130,7 @@ export class CyberwareRateLimitError extends CyberwareApiError {
    */
   constructor(message = 'Rate limit exceeded', responseData?: unknown) {
     super(message, 429, responseData);
+    Object.setPrototypeOf(this, CyberwareRateLimitError.prototype);
+    this.name = 'CyberwareRateLimitError';
   }
 }

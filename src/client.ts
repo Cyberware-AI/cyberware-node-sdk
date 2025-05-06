@@ -2,14 +2,15 @@ import axios, { AxiosInstance, AxiosError, AxiosResponse } from 'axios';
 import axiosRetry from 'axios-retry';
 import {
   CyberwareClientOptions,
-  TextAnalysisRequest,
-  AudioAnalysisRequest,
+  AnalysisRequest, // Updated
   AnalysisTaskResponse,
+  AnalysisResultResponse, // Added
   ApiErrorResponse,
 } from './types';
 import {
   CyberwareApiError,
   CyberwareAuthenticationError,
+  CyberwareForbiddenError, // Added
   CyberwareBadRequestError,
   CyberwareNotFoundError,
   CyberwareServerError,
@@ -144,8 +145,8 @@ export class CyberwareClient {
         const responseData = error.response?.data || lastErrorData?.data;
         const finalHeaders = error.response?.headers || lastErrorData?.headers;
 
-        const message =
-          (responseData as ApiErrorResponse)?.error || error.message;
+        const apiProvidedErrorMessage = (responseData as ApiErrorResponse)
+          ?.error;
 
         // Restore the original debug error logging logic
         if (debug && status) {
@@ -160,82 +161,135 @@ export class CyberwareClient {
 
         switch (status) {
           case 400:
-            throw new CyberwareBadRequestError(message, responseData);
+            const badRequestError = new CyberwareBadRequestError(
+              apiProvidedErrorMessage, // Pass only API provided message
+              responseData,
+            );
+            return Promise.reject(badRequestError);
           case 401:
-            throw new CyberwareAuthenticationError(message, responseData);
+            const authError = new CyberwareAuthenticationError(
+              apiProvidedErrorMessage, // Pass only API provided message
+              responseData,
+            );
+            return Promise.reject(authError);
+          case 403: // Added case for Forbidden
+            const forbiddenError = new CyberwareForbiddenError(
+              apiProvidedErrorMessage, // Pass only API provided message
+              responseData,
+            );
+            return Promise.reject(forbiddenError);
           case 404:
-            throw new CyberwareNotFoundError(message, responseData);
+            const notFoundError = new CyberwareNotFoundError(
+              apiProvidedErrorMessage, // Pass only API provided message
+              responseData,
+            );
+            return Promise.reject(notFoundError);
           case 429:
             // Note: This might be handled by retry logic first
-            throw new CyberwareRateLimitError(message, responseData);
+            const rateLimitError = new CyberwareRateLimitError(
+              apiProvidedErrorMessage, // Pass only API provided message
+              responseData,
+            );
+            return Promise.reject(rateLimitError);
           case 500:
           case 502:
           case 503:
           case 504:
-            throw new CyberwareServerError(message, status, responseData);
+            // CyberwareServerError constructor has a default for message, so pass apiProvidedErrorMessage directly.
+            // The 'status' argument to the constructor will be the specific 5xx code.
+            const serverError = new CyberwareServerError(
+              apiProvidedErrorMessage, // Pass only API-provided message, or undefined
+              status, // This will be the specific 5xx status
+              responseData,
+            );
+            return Promise.reject(serverError);
           default:
             // Includes network errors where error.response might be undefined
-            throw new CyberwareApiError(
-              message || 'An unexpected error occurred',
+            // For the generic CyberwareApiError, use apiProvided, then axios error message, then a final fallback.
+            const defaultMessage =
+              apiProvidedErrorMessage ||
+              error.message ||
+              'An unexpected error occurred';
+            const defaultError = new CyberwareApiError(
+              defaultMessage,
               status,
               responseData,
             );
+            return Promise.reject(defaultError);
         }
       },
     );
   }
 
   /**
-   * Submits text for asynchronous sentiment analysis.
-   * Corresponds to POST /sentiment/text
+   * Submits content (text, audio link, etc.) for asynchronous analysis.
+   * Corresponds to POST /analyze
    *
-   * @param request The text analysis request details.
-   * @returns A promise resolving to an `AnalysisTaskResponse` containing the ID for the submitted data.
-   * @throws {CyberwareBadRequestError} If the request is invalid (400).
-   * @throws {CyberwareAuthenticationError} If the API key is invalid (401).
-   * @throws {CyberwareNotFoundError} If the associated game is not found (404).
+   * @param request The analysis request details, conforming to the AnalysisRequest interface.
+   * @returns A promise resolving to an `AnalysisTaskResponse` containing the ID for the submitted analysis task.
+   * @throws {CyberwareBadRequestError} If the request is invalid (400). E.g., missing required fields based on contentType.
+   * @throws {CyberwareAuthenticationError} If the API key is invalid or missing (401).
+   * @throws {CyberwareForbiddenError} If the API key is not authorized for the specified gameId (403).
    * @throws {CyberwareRateLimitError} If the rate limit is exceeded (429).
    * @throws {CyberwareServerError} If there is a server error (5xx).
    * @throws {CyberwareApiError} For other unexpected errors.
    */
-  async analyzeText(
-    request: TextAnalysisRequest,
-  ): Promise<AnalysisTaskResponse> {
-    if (!request || !request.game_id || !request.text) {
+  async analyze(request: AnalysisRequest): Promise<AnalysisTaskResponse> {
+    // Basic validation
+    if (
+      !request ||
+      !request.gameId ||
+      !request.contentType ||
+      !request.sourcePlayerId
+    ) {
       throw new CyberwareBadRequestError(
-        'Missing required fields: game_id and text are required for text analysis.',
+        'Missing required fields: gameId, contentType, and sourcePlayerId are required.',
       );
     }
+    if (
+      request.contentType === 'text' &&
+      !request.rawContent &&
+      !request.eventLogUrl
+    ) {
+      throw new CyberwareBadRequestError(
+        'For contentType "text", either rawContent or eventLogUrl must be provided.',
+      );
+    }
+    // Add more validation based on contentType if necessary (e.g., for audio)
+
     // The interceptor handles extracting the data or throwing the correct error
     // API returns 202 Accepted with AnalysisTaskResponse
-    // @ts-expect-error Linter incorrectly flags return type due to interceptor complexity
-    return this.client.post<AnalysisTaskResponse>('/sentiment/text', request);
+    // @ts-expect-error TS cannot infer the type transformation from the interceptor
+    return this.client.post<AnalysisTaskResponse>('/analyze', request);
   }
 
   /**
-   * Submits audio (base64 encoded) for asynchronous sentiment analysis.
-   * Corresponds to POST /sentiment/audio
+   * Fetches the results of a previously submitted analysis task.
+   * Corresponds to GET /results/{id}
    *
-   * @param request The audio analysis request details.
-   * @returns A promise resolving to an `AnalysisTaskResponse` containing the ID for the submitted data.
-   * @throws {CyberwareBadRequestError} If the request is invalid (400).
-   * @throws {CyberwareAuthenticationError} If the API key is invalid (401).
-   * @throws {CyberwareNotFoundError} If the associated game is not found (404).
+   * NOTE: The API specification mentions Bearer token authentication for this endpoint,
+   * but this client currently uses the X-API-KEY header set during initialization.
+   * This might need adjustment if Bearer tokens are strictly required.
+   *
+   * @param analysisId The unique ID of the analysis task (returned in AnalysisTaskResponse).
+   * @returns A promise resolving to an `AnalysisResultResponse` containing the analysis results.
+   * @throws {CyberwareAuthenticationError} If authentication fails (401 - potentially expecting Bearer token).
+   * @throws {CyberwareForbiddenError} If the user does not own the record (403).
+   * @throws {CyberwareNotFoundError} If the analysis ID is not found (404).
    * @throws {CyberwareRateLimitError} If the rate limit is exceeded (429).
    * @throws {CyberwareServerError} If there is a server error (5xx).
    * @throws {CyberwareApiError} For other unexpected errors.
    */
-  async analyzeAudio(
-    request: AudioAnalysisRequest,
-  ): Promise<AnalysisTaskResponse> {
-    if (!request || !request.game_id || !request.audio_base64) {
+  async getResults(analysisId: string): Promise<AnalysisResultResponse> {
+    if (!analysisId) {
       throw new CyberwareBadRequestError(
-        'Missing required fields: game_id and audio_base64 are required for audio analysis.',
+        'Missing required parameter: analysisId.',
       );
     }
+
     // The interceptor handles extracting the data or throwing the correct error
-    // API returns 202 Accepted with AnalysisTaskResponse
-    // @ts-expect-error Linter incorrectly flags return type due to interceptor complexity
-    return this.client.post<AnalysisTaskResponse>('/sentiment/audio', request);
+    // API returns 200 OK with AnalysisResultResponse
+    // @ts-expect-error TS cannot infer the type transformation from the interceptor
+    return this.client.get<AnalysisResultResponse>(`/results/${analysisId}`);
   }
 }

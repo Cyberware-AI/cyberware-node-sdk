@@ -8,10 +8,19 @@ import {
   Events,
   Message,
 } from 'discord.js';
+import {
+  CyberwareClient,
+  AnalysisRequest,
+  CyberwareApiError,
+  CyberwareAuthenticationError,
+  CyberwareBadRequestError,
+} from '../src'; // Adjust path as needed
 
 // --- Configuration ---
-// IMPORTANT: Load your Discord Bot Token securely!
+// IMPORTANT: Load secrets securely!
 const discordToken = process.env.DISCORD_BOT_TOKEN;
+const apiKey = process.env.CYBERWARE_API_KEY;
+const gameId = 'your-discord-game-id'; // Replace with your actual Game ID for Discord
 
 if (!discordToken) {
   console.error(
@@ -20,6 +29,17 @@ if (!discordToken) {
   );
   process.exit(1);
 }
+if (!apiKey) {
+  console.error(
+    'Error: CYBERWARE_API_KEY environment variable is not set.',
+    'Please set it before running the example.',
+  );
+  process.exit(1);
+}
+
+// --- Cyberware Client Setup ---
+const cyberwareClient = new CyberwareClient(apiKey, { debug: false });
+console.log('Cyberware Client Initialized.');
 
 // --- Discord Client Setup ---
 
@@ -57,19 +77,23 @@ client.on(Events.MessageCreate, async (message: Message) => {
     `[Discord] Server: "${serverName}" | Channel: #${channelName} | User: ${authorTag} | Message: "${content}"`,
   );
 
-  // --- Potential Cyberware SDK Integration Point ---
-  // Here you could potentially call the Cyberware SDK's analyzeText method:
-  /*
+  // --- Cyberware SDK Integration ---
   try {
-    // Initialize cyberwareClient earlier in the script
-    const analysisRequest = { game_id: 'your-discord-game-id', text: content };
-    const task = await cyberwareClient.analyzeText(analysisRequest);
-    console.log(` -> Sent to Cyberware for analysis (Task ID: ${task.sentiment_data_id})`);
+    const analysisRequest: AnalysisRequest = {
+      gameId: gameId,
+      contentType: 'text',
+      rawContent: content,
+      sourcePlayerId: authorTag, // Using Discord user tag as source player ID
+      // You could add webhookUrl here if needed
+    };
+    const task = await cyberwareClient.analyze(analysisRequest);
+    console.log(
+      ` -> Sent to Cyberware for analysis (Analysis ID: ${task.analysisId})`,
+    );
   } catch (error) {
-    console.error(' -> Failed to send message to Cyberware:', error);
+    handleApiError(`Cyberware Analysis for message "${content}"`, error);
   }
-  */
-  // --------------------------------------------------
+  // ---------------------------------
 });
 
 // --- Login ---
@@ -80,3 +104,33 @@ client.login(discordToken).catch((err) => {
   console.error('Failed to log in to Discord:', err);
   process.exit(1);
 });
+
+// --- Helper Function for Cyberware Error Handling ---
+
+function handleApiError(context: string, error: unknown) {
+  console.error(`Error during ${context}:`);
+  if (error instanceof CyberwareAuthenticationError) {
+    console.error(
+      `  Authentication Failed (Status: ${error.status}): ${error.message}`,
+    );
+    console.error('  >> Check if your API key is correct and active.');
+  } else if (error instanceof CyberwareBadRequestError) {
+    console.error(`  Bad Request (Status: ${error.status}): ${error.message}`);
+    console.error(
+      '  >> Check the request payload for missing or invalid fields.',
+    );
+    if (error.responseData) {
+      console.error('  >> API Response:', error.responseData);
+    }
+  } else if (error instanceof CyberwareApiError) {
+    console.error(
+      `  API Error (Status: ${error.status || 'N/A'}): ${error.message}`,
+    );
+    if (error.responseData) {
+      console.error('  >> API Response:', error.responseData);
+    }
+  } else {
+    // Catch unexpected non-API errors
+    console.error('  An unexpected error occurred:', error);
+  }
+}

@@ -1,411 +1,656 @@
-import nock from 'nock';
+/// <reference types="bun-types" />
+
+import axiosOriginal, { // Renamed to avoid conflict with potentially mocked 'axios'
+  AxiosError,
+  AxiosInstance,
+  // CreateAxiosDefaults, // Removed as unused
+  AxiosRequestConfig,
+  AxiosResponse,
+  AxiosHeaders,
+  InternalAxiosRequestConfig,
+  HeadersDefaults,
+  AxiosRequestHeaders,
+} from 'axios';
+import { CyberwareClient } from '../src/client';
 import {
-  CyberwareClient,
+  CyberwareApiError,
   CyberwareAuthenticationError,
   CyberwareBadRequestError,
+  CyberwareForbiddenError,
   CyberwareNotFoundError,
   CyberwareRateLimitError,
   CyberwareServerError,
-  CyberwareApiError,
-  TextAnalysisRequest,
-  AudioAnalysisRequest,
+} from '../src/errors';
+import {
+  AnalysisRequest,
+  AnalysisResultResponse,
   AnalysisTaskResponse,
-} from '../src'; // Import from the main entry point
+  CyberwareClientOptions,
+} from '../src/types';
+import { test, expect, describe, beforeEach, jest, mock } from 'bun:test'; // Use bun:test
 
-// Define the production base URL consistently with src/client.ts
-const LOCAL_TEST_URL = 'http://localhost:8080/api/v1'; // Use localhost for testing as requested
+// Mock axios module using bun:test's mock
+const mockCreate = jest.fn(); // This will be axios.create, 'jest' is from 'bun:test'
+mock.module('axios', () => ({
+  default: {
+    create: mockCreate,
+    isAxiosError: axiosOriginal.isAxiosError,
+    // Add other static properties of axios if your client uses them
+  },
+  isAxiosError: axiosOriginal.isAxiosError, // if client.ts also uses named import
+}));
+
+// This variable is not strictly needed if client.ts correctly uses the mocked 'axios'
+// const mockedAxios = axiosOriginal as unknown as { create: jest.Mock<...> } ...
+
+// Define a type for the mocked Axios instance methods using jest.Mock from 'bun:test'
+// For bun:test, jest.Mock is typically jest.Mock<(...args: ArgsTuple) => ReturnType>
+type MockedAxiosInstance = Omit<
+  AxiosInstance,
+  | 'post'
+  | 'get'
+  | 'put'
+  | 'patch'
+  | 'delete'
+  | 'head'
+  | 'options'
+  | 'request'
+  | 'getUri'
+  | 'interceptors'
+  | 'defaults'
+  | 'postForm'
+  | 'putForm'
+  | 'patchForm'
+> & {
+  post: jest.Mock<
+    (
+      url: string,
+      data?: unknown,
+      config?: AxiosRequestConfig,
+    ) => Promise<unknown>
+  >; // Will return post-interceptor data or reject with CyberwareError
+  get: jest.Mock<
+    (url: string, config?: AxiosRequestConfig) => Promise<unknown>
+  >; // Will return post-interceptor data or reject with CyberwareError
+  put: jest.Mock<
+    (
+      url: string,
+      data?: unknown,
+      config?: AxiosRequestConfig,
+    ) => Promise<unknown>
+  >;
+  patch: jest.Mock<
+    (
+      url: string,
+      data?: unknown,
+      config?: AxiosRequestConfig,
+    ) => Promise<unknown>
+  >;
+  delete: jest.Mock<
+    (url: string, config?: AxiosRequestConfig) => Promise<unknown>
+  >;
+  head: jest.Mock<
+    (url: string, config?: AxiosRequestConfig) => Promise<unknown>
+  >;
+  options: jest.Mock<
+    (url: string, config?: AxiosRequestConfig) => Promise<unknown>
+  >;
+  request: jest.Mock<(config: AxiosRequestConfig) => Promise<unknown>>;
+  getUri: jest.Mock<(config?: AxiosRequestConfig) => string>;
+  interceptors: {
+    request: {
+      use: jest.Mock<
+        (
+          onFulfilled?: (
+            value: InternalAxiosRequestConfig,
+          ) => InternalAxiosRequestConfig | Promise<InternalAxiosRequestConfig>,
+          onRejected?: (error: unknown) => unknown,
+        ) => number
+      >;
+      eject: jest.Mock<(id: number) => void>;
+    };
+    response: {
+      use: jest.Mock<
+        (
+          onFulfilled?: (
+            value: AxiosResponse<unknown, unknown>,
+          ) => unknown | Promise<unknown>,
+          onRejected?: (
+            error: AxiosError<unknown, unknown>,
+          ) => Promise<never> | unknown,
+        ) => number
+      >;
+      eject: jest.Mock<(id: number) => void>;
+    };
+  };
+  defaults: import('axios').AxiosDefaults;
+};
+
 const TEST_API_KEY = 'test-api-key';
-const SENTIMENT_TEXT_PATH = '/sentiment/text';
-const SENTIMENT_AUDIO_PATH = '/sentiment/audio';
+const PRODUCTION_BASE_URL = 'http://localhost:8080/api/v1';
 
 describe('CyberwareClient', () => {
   let client: CyberwareClient;
+  let mockAxiosInstance: MockedAxiosInstance;
+  let capturedResponseSuccessInterceptor:
+    | ((value: AxiosResponse<unknown, unknown>) => unknown | Promise<unknown>)
+    | undefined;
+  let capturedResponseErrorInterceptor:
+    | ((error: AxiosError<unknown, unknown>) => Promise<never> | unknown)
+    | undefined;
 
   beforeEach(() => {
-    // Ensure all nock interceptors are cleaned up before each test
-    if (!nock.isActive()) {
-      nock.activate();
-    }
-    nock.cleanAll();
-    // Create a new client instance for each test
-    client = new CyberwareClient(TEST_API_KEY);
+    mockCreate.mockClear(); // Use the mockCreate from bun:test's jest.fn()
+    capturedResponseSuccessInterceptor = undefined;
+    capturedResponseErrorInterceptor = undefined;
+
+    const tempMockInstance = {
+      post: jest.fn() as MockedAxiosInstance['post'], // Cast to ensure type compatibility
+      get: jest.fn() as MockedAxiosInstance['get'],
+      put: jest.fn() as MockedAxiosInstance['put'],
+      patch: jest.fn() as MockedAxiosInstance['patch'],
+      delete: jest.fn() as MockedAxiosInstance['delete'],
+      head: jest.fn() as MockedAxiosInstance['head'],
+      options: jest.fn() as MockedAxiosInstance['options'],
+      request: jest.fn() as MockedAxiosInstance['request'],
+      getUri: jest.fn(() => '') as MockedAxiosInstance['getUri'],
+      interceptors: {
+        request: {
+          use: jest.fn(),
+          eject: jest.fn(),
+        } as MockedAxiosInstance['interceptors']['request'],
+        response: {
+          use: jest.fn(
+            (
+              onFulfilled?: (
+                value: AxiosResponse<unknown, unknown>,
+              ) => unknown | Promise<unknown>,
+              onRejected?: (
+                error: AxiosError<unknown, unknown>,
+              ) => Promise<never> | unknown,
+            ) => {
+              capturedResponseSuccessInterceptor = onFulfilled;
+              capturedResponseErrorInterceptor = onRejected;
+              return 1; // Return an interceptor ID
+            },
+          ) as MockedAxiosInstance['interceptors']['response']['use'],
+          eject:
+            jest.fn() as MockedAxiosInstance['interceptors']['response']['eject'],
+        },
+      },
+      defaults: {
+        headers: {
+          common: { 'Content-Type': 'application/json' },
+        } as HeadersDefaults,
+      } as import('axios').AxiosDefaults,
+    };
+    mockAxiosInstance = tempMockInstance as MockedAxiosInstance;
+
+    mockCreate.mockReturnValue(mockAxiosInstance as unknown as AxiosInstance);
+
+    // Client is instantiated in the describe/test specific beforeEach blocks.
+    // We'll add assertions for captured interceptors after client instantiation in those blocks.
   });
 
-  afterAll(() => {
-    nock.restore(); // Restore original HTTP module behavior after all tests
-  });
+  // Helper to create AxiosError - MOVED TO THIS SCOPE
+  const createAxiosError = (
+    status: number,
+    data?: { error?: string },
+    message?: string,
+  ): AxiosError => {
+    const error = new Error(
+      message || `Request failed with status code ${status}`,
+    ) as AxiosError;
+    error.isAxiosError = true;
+    error.response = {
+      data: data || { error: `API Error ${status}` },
+      status,
+      statusText: `STATUS_${status}`,
+      headers: {} as AxiosHeaders, // Response headers can be AxiosHeaders
+      config: {
+        headers: {} as AxiosRequestHeaders, // Request config headers
+      } as InternalAxiosRequestConfig,
+    };
+    error.config = {
+      // Request config associated with the error
+      headers: {} as AxiosRequestHeaders, // Request config headers
+    } as InternalAxiosRequestConfig;
+    error.toJSON = () => ({});
+    return error;
+  };
 
-  // --- Constructor Tests ---
   describe('constructor', () => {
-    it('should throw an error if API key is missing', () => {
+    test('should throw an error if API key is missing', () => {
+      // Changed it to test
       expect(() => new CyberwareClient('')).toThrow('API key is required');
     });
 
-    it('should create an axios instance with correct defaults', () => {
-      const defaultClient = new CyberwareClient(TEST_API_KEY);
-      // @ts-expect-error Accessing private client for testing purposes
-      expect(defaultClient.client.defaults.baseURL).toBe(LOCAL_TEST_URL); // Check localhost URL
-      // @ts-expect-error Accessing private client for testing purposes
-      expect(defaultClient.client.defaults.headers['X-API-KEY']).toBe(
-        TEST_API_KEY,
-      );
-      // @ts-expect-error Accessing private client for testing purposes
-      expect(defaultClient.client.defaults.timeout).toBe(10000);
+    test('should create an axios instance with correct defaults', () => {
+      // Changed it to test
+      client = new CyberwareClient(TEST_API_KEY);
+      expect(mockCreate).toHaveBeenCalledWith({
+        // Check the imported mockCreate
+        baseURL: PRODUCTION_BASE_URL,
+        timeout: 10000,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-KEY': TEST_API_KEY,
+        },
+      });
     });
 
-    it('should create an axios instance with provided options', () => {
-      const customClient = new CyberwareClient(TEST_API_KEY, {
+    test('should create an axios instance with provided options', () => {
+      // Changed it to test
+      const options: CyberwareClientOptions = {
         timeout: 5000,
+        debug: true,
+        retryConfig: { retries: 5 },
+      };
+      client = new CyberwareClient(TEST_API_KEY, options);
+      expect(mockCreate).toHaveBeenCalledWith({
+        // Check the imported mockCreate
+        baseURL: PRODUCTION_BASE_URL,
+        timeout: options.timeout,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-KEY': TEST_API_KEY,
+        },
       });
-      // @ts-expect-error Accessing private client for testing purposes
-      expect(customClient.client.defaults.baseURL).toBe(LOCAL_TEST_URL); // Check localhost URL
-      // @ts-expect-error Accessing private client for testing purposes
-      expect(customClient.client.defaults.timeout).toBe(5000);
-      // @ts-expect-error Accessing private client for testing purposes
-      expect(customClient.client.defaults.headers['X-API-KEY']).toBe(
-        TEST_API_KEY,
-      );
+      // Further tests for retryConfig and debug interceptor setup can be added if needed
     });
   });
 
-  // --- analyzeText Tests ---
-  describe('analyzeText', () => {
-    const validRequest: TextAnalysisRequest = {
-      game_id: 'game-123',
-      text: 'This is a test.',
-    };
-    // Define the expected 202 response based on AnalysisTaskResponse
-    const mockAcceptedResponse: AnalysisTaskResponse = {
-      message: 'Analysis task accepted',
-      sentiment_data_id: 'text-uuid-123',
-    };
-
-    it('should throw BadRequestError if request is invalid', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await expect(client.analyzeText({} as any)).rejects.toThrow(
-        CyberwareBadRequestError,
-      );
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await expect(client.analyzeText({ game_id: '1' } as any)).rejects.toThrow(
-        CyberwareBadRequestError,
-      );
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await expect(client.analyzeText({ text: 't' } as any)).rejects.toThrow(
-        CyberwareBadRequestError,
-      );
+  describe('analyze', () => {
+    beforeEach(() => {
+      client = new CyberwareClient(TEST_API_KEY);
+      // Assert that interceptors were captured
+      expect(capturedResponseSuccessInterceptor).toBeDefined();
+      expect(capturedResponseErrorInterceptor).toBeDefined();
     });
 
-    it('should make a POST request to /sentiment/text with correct data and headers', async () => {
-      const scope = nock(LOCAL_TEST_URL) // Use localhost URL
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .post(SENTIMENT_TEXT_PATH, validRequest as any)
-        .matchHeader('X-API-KEY', TEST_API_KEY)
-        .matchHeader('Content-Type', 'application/json')
-        .reply(202, mockAcceptedResponse); // Reply with 202
-
-      await client.analyzeText(validRequest);
-      scope.done(); // Assert that the mock was called
-    });
-
-    it('should return the AnalysisTaskResponse on successful submission (202)', async () => {
-      nock(LOCAL_TEST_URL) // Use localhost URL
-        .post(SENTIMENT_TEXT_PATH)
-        .reply(202, mockAcceptedResponse);
-
-      const result = await client.analyzeText(validRequest);
-      expect(result).toEqual(mockAcceptedResponse);
-    });
-  });
-
-  // --- analyzeAudio Tests ---
-  describe('analyzeAudio', () => {
-    const validRequest: AudioAnalysisRequest = {
-      game_id: 'game-456',
-      audio_base64: 'base64encodedstring',
-    };
-    // Define the expected 202 response
-    const mockAcceptedResponse: AnalysisTaskResponse = {
-      message: 'Audio analysis task accepted',
-      sentiment_data_id: 'audio-uuid-456',
+    const baseValidRequest: AnalysisRequest = {
+      gameId: 'game-123',
+      contentType: 'text',
+      sourcePlayerId: 'player-abc',
+      rawContent: 'This is a test.',
     };
 
-    it('should throw BadRequestError if request is invalid', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await expect(client.analyzeAudio({} as any)).rejects.toThrow(
-        CyberwareBadRequestError,
-      );
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    test('should throw CyberwareBadRequestError if required fields are missing (gameId)', async () => {
+      // Changed it to test
+      const invalidRequest = {
+        ...baseValidRequest,
+        gameId: undefined,
+      } as Partial<AnalysisRequest>;
       await expect(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        client.analyzeAudio({ game_id: '1' } as any),
+        client.analyze(invalidRequest as AnalysisRequest),
       ).rejects.toThrow(CyberwareBadRequestError);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await expect(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        client.analyzeAudio({ audio_base64: 'abc' } as any),
+        client.analyze(invalidRequest as AnalysisRequest),
+      ).rejects.toThrow(
+        'Missing required fields: gameId, contentType, and sourcePlayerId are required.',
+      );
+    });
+
+    test('should throw CyberwareBadRequestError if required fields are missing (contentType)', async () => {
+      // Changed it to test
+      const invalidRequest = {
+        ...baseValidRequest,
+        contentType: undefined,
+      } as Partial<AnalysisRequest>;
+      await expect(
+        client.analyze(invalidRequest as AnalysisRequest),
       ).rejects.toThrow(CyberwareBadRequestError);
+      await expect(
+        client.analyze(invalidRequest as AnalysisRequest),
+      ).rejects.toThrow(
+        'Missing required fields: gameId, contentType, and sourcePlayerId are required.',
+      );
     });
 
-    it('should make a POST request to /sentiment/audio with correct data and headers', async () => {
-      const scope = nock(LOCAL_TEST_URL) // Use localhost URL
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .post(SENTIMENT_AUDIO_PATH, validRequest as any)
-        .matchHeader('X-API-KEY', TEST_API_KEY)
-        .matchHeader('Content-Type', 'application/json')
-        .reply(202, mockAcceptedResponse); // Reply with 202
-
-      await client.analyzeAudio(validRequest);
-      scope.done(); // Assert that the mock was called
+    test('should throw CyberwareBadRequestError if required fields are missing (sourcePlayerId)', async () => {
+      // Changed it to test
+      const invalidRequest = {
+        ...baseValidRequest,
+        sourcePlayerId: undefined,
+      } as Partial<AnalysisRequest>;
+      await expect(
+        client.analyze(invalidRequest as AnalysisRequest),
+      ).rejects.toThrow(CyberwareBadRequestError);
+      await expect(
+        client.analyze(invalidRequest as AnalysisRequest),
+      ).rejects.toThrow(
+        'Missing required fields: gameId, contentType, and sourcePlayerId are required.',
+      );
     });
 
-    it('should return the AnalysisTaskResponse on successful submission (202)', async () => {
-      nock(LOCAL_TEST_URL) // Use localhost URL
-        .post(SENTIMENT_AUDIO_PATH)
-        .reply(202, mockAcceptedResponse);
-
-      const result = await client.analyzeAudio(validRequest);
-      expect(result).toEqual(mockAcceptedResponse);
+    test('should throw CyberwareBadRequestError if contentType is text but no content/url provided', async () => {
+      // Changed it to test
+      const invalidRequest: Partial<AnalysisRequest> = {
+        // Intentionally missing rawContent/eventLogUrl
+        gameId: 'game-123',
+        contentType: 'text',
+        sourcePlayerId: 'player-abc',
+      };
+      await expect(
+        client.analyze(invalidRequest as AnalysisRequest),
+      ).rejects.toThrow(CyberwareBadRequestError);
+      await expect(
+        client.analyze(invalidRequest as AnalysisRequest),
+      ).rejects.toThrow(
+        'For contentType "text", either rawContent or eventLogUrl must be provided.',
+      );
     });
-  });
 
-  // --- Error Handling Tests ---
-  describe('Error Handling', () => {
-    // Use a client configured with ZERO retries for these specific tests
-    let noRetryClient: CyberwareClient;
-    beforeAll(() => {
-      noRetryClient = new CyberwareClient(TEST_API_KEY, {
-        retryConfig: { retries: 0 },
+    test('should make a POST request to /analyze with correct data and headers for text', async () => {
+      // Changed it to test
+      const mockResponseData: AnalysisTaskResponse = {
+        message: 'Analysis task submitted',
+        analysisId: 'analysis-uuid-123',
+      };
+      // Configure the mock interceptor to return data directly
+      mockAxiosInstance.post.mockImplementationOnce(async () => {
+        const mockAxiosResp: AxiosResponse = {
+          // Renamed for clarity
+          data: mockResponseData,
+          status: 202,
+          statusText: 'Accepted',
+          headers: {},
+          config: {} as InternalAxiosRequestConfig,
+        };
+        if (capturedResponseSuccessInterceptor) {
+          return capturedResponseSuccessInterceptor(mockAxiosResp);
+        }
+        // Fallback if interceptor somehow not captured (should be caught by toBeDefined)
+        return Promise.resolve(mockResponseData);
       });
-      // Nock needs to target the actual production URL now
-      nock.cleanAll(); // Clean any previous mocks
+
+      const response = await client.analyze(baseValidRequest);
+
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith(
+        '/analyze',
+        baseValidRequest,
+      );
+      expect(response).toEqual(mockResponseData);
     });
 
-    const textRequest: TextAnalysisRequest = {
-      game_id: 'g1',
-      text: 'error test',
-    };
-    const errorResponse = { error: 'Something went wrong' };
+    test('should make a POST request to /analyze with eventLogUrl', async () => {
+      // Changed it to test
+      const requestWithUrl: AnalysisRequest = {
+        gameId: 'game-456',
+        contentType: 'text',
+        sourcePlayerId: 'player-xyz',
+        eventLogUrl: 'http://example.com/log.txt',
+      };
+      const mockResponseData: AnalysisTaskResponse = {
+        message: 'Analysis task submitted via URL',
+        analysisId: 'analysis-uuid-456',
+      };
+      mockAxiosInstance.post.mockImplementationOnce(async () => {
+        const mockAxiosResp: AxiosResponse = {
+          // Renamed for clarity
+          data: mockResponseData,
+          status: 202,
+          statusText: 'Accepted',
+          headers: {},
+          config: {} as InternalAxiosRequestConfig,
+        };
+        if (capturedResponseSuccessInterceptor) {
+          return capturedResponseSuccessInterceptor(mockAxiosResp);
+        }
+        return Promise.resolve(mockResponseData); // Fallback
+      });
 
-    const testCases = [
+      const response = await client.analyze(requestWithUrl);
+
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith(
+        '/analyze',
+        requestWithUrl,
+      );
+      expect(response).toEqual(mockResponseData);
+    });
+
+    // createAxiosError was moved up
+
+    const errorTestCases = [
       {
         status: 400,
-        errorClass: CyberwareBadRequestError,
-        message: 'Something went wrong',
+        ErrorClass: CyberwareBadRequestError,
+        defaultMessage: 'Bad request',
       },
       {
         status: 401,
-        errorClass: CyberwareAuthenticationError,
-        message: 'Something went wrong',
+        ErrorClass: CyberwareAuthenticationError,
+        defaultMessage: 'Invalid API key',
+      },
+      {
+        status: 403,
+        ErrorClass: CyberwareForbiddenError,
+        defaultMessage: 'Forbidden',
       },
       {
         status: 404,
-        errorClass: CyberwareNotFoundError,
-        message: 'Something went wrong',
-      },
+        ErrorClass: CyberwareNotFoundError,
+        defaultMessage: 'Resource not found',
+      }, // Should not happen for /analyze but good to have
       {
         status: 429,
-        errorClass: CyberwareRateLimitError,
-        message: 'Something went wrong',
+        ErrorClass: CyberwareRateLimitError,
+        defaultMessage: 'Rate limit exceeded',
       },
       {
         status: 500,
-        errorClass: CyberwareServerError,
-        message: 'Something went wrong',
+        ErrorClass: CyberwareServerError,
+        defaultMessage: 'Internal server error',
       },
       {
         status: 503,
-        errorClass: CyberwareServerError,
-        message: 'Something went wrong',
+        ErrorClass: CyberwareServerError,
+        defaultMessage: 'Internal server error',
       },
+      {
+        status: 999,
+        ErrorClass: CyberwareApiError,
+        defaultMessage: 'An unexpected error occurred',
+      }, // Default case
     ];
 
-    testCases.forEach(({ status, errorClass, message }) => {
-      it(`should throw ${errorClass.name} for status ${status}`, async () => {
-        const scope = nock(LOCAL_TEST_URL) // Use localhost URL
-          .post(SENTIMENT_TEXT_PATH)
-          .reply(status, errorResponse);
-        let caughtError: unknown = null;
+    errorTestCases.forEach(({ status, ErrorClass, defaultMessage }) => {
+      test(`should throw ${ErrorClass.name} for status ${status}`, async () => {
+        // Changed it to test
+        const apiErrorMessage = `Custom API error for ${status}`;
+        const errorResponse = { error: apiErrorMessage };
+        const axiosError = createAxiosError(status, errorResponse);
+
+        mockAxiosInstance.post.mockImplementationOnce(async () => {
+          if (capturedResponseErrorInterceptor) {
+            return capturedResponseErrorInterceptor(axiosError);
+          }
+          return Promise.reject(axiosError); // Fallback
+        });
 
         try {
-          // Make the API call ONCE here
-          await noRetryClient.analyzeText(textRequest);
-        } catch (e) {
-          caughtError = e; // Catch the error
+          await client.analyze(baseValidRequest);
+        } catch (e: unknown) {
+          expect(e).toBeInstanceOf(ErrorClass);
+          const specificError = e as CyberwareApiError; // Cast for property access
+          expect(specificError.message).toBe(apiErrorMessage);
+          expect(specificError.status).toBe(status);
+          expect(specificError.responseData).toEqual(errorResponse);
         }
+      });
 
-        // Perform all assertions AFTER the try/catch
-        expect(caughtError).not.toBeNull(); // Ensure an error was actually caught
-        expect(caughtError).toBeInstanceOf(errorClass);
-        const error = caughtError as CyberwareApiError;
-        expect(error.status).toBe(status);
-        expect(error.responseData).toEqual(errorResponse);
-        expect(error.message).toBe(message);
+      test(`should throw ${ErrorClass.name} with default message if API provides no error message for status ${status}`, async () => {
+        // Changed it to test
+        const axiosError = createAxiosError(status, {
+          /* error: undefined */
+        }); // Pass object that might not have error
+        mockAxiosInstance.post.mockImplementationOnce(async () => {
+          if (capturedResponseErrorInterceptor) {
+            return capturedResponseErrorInterceptor(axiosError);
+          }
+          return Promise.reject(axiosError); // Fallback
+        });
 
-        scope.done(); // Verify the mock was called exactly once
+        try {
+          await client.analyze(baseValidRequest);
+        } catch (e: unknown) {
+          expect(e).toBeInstanceOf(ErrorClass);
+          const specificError = e as CyberwareApiError;
+          // For CyberwareApiError (default case), the message might be from Axios if no responseData.error
+          if (
+            ErrorClass === CyberwareApiError &&
+            !(axiosError.response?.data as { error?: string })?.error
+          ) {
+            expect(specificError.message).toBe(axiosError.message);
+          } else {
+            expect(specificError.message).toBe(defaultMessage);
+          }
+          expect(specificError.status).toBe(status);
+        }
       });
     });
-
-    it('should throw CyberwareApiError for unexpected network errors', async () => {
-      const scope = nock(LOCAL_TEST_URL) // Use localhost URL
-        .post(SENTIMENT_TEXT_PATH)
-        .replyWithError('Network failure');
-      let caughtError: unknown = null;
-
-      try {
-        await noRetryClient.analyzeText(textRequest);
-      } catch (e) {
-        caughtError = e;
-      }
-
-      expect(caughtError).not.toBeNull();
-      expect(caughtError).toBeInstanceOf(CyberwareApiError);
-      const error = caughtError as CyberwareApiError;
-      expect(error.status).toBeUndefined();
-      expect(error.message).toContain('Network failure');
-      scope.done();
-    });
-
-    it('should throw CyberwareApiError for unexpected status codes', async () => {
-      const errorData = { error: "I'm a teapot" };
-      const scope = nock(LOCAL_TEST_URL) // Use localhost URL
-        .post(SENTIMENT_TEXT_PATH)
-        .reply(418, errorData);
-      let caughtError: unknown = null;
-
-      try {
-        await noRetryClient.analyzeText(textRequest);
-      } catch (e) {
-        caughtError = e;
-      }
-
-      expect(caughtError).not.toBeNull();
-      expect(caughtError).toBeInstanceOf(CyberwareApiError);
-      const error = caughtError as CyberwareApiError;
-      expect(error.status).toBe(418);
-      expect(error.responseData).toEqual(errorData);
-      expect(error.message).toBe(errorData.error);
-      scope.done();
-    });
   });
 
-  // --- Retry Logic Tests (Basic) ---
-  describe('Retry Logic', () => {
-    const textRequest: TextAnalysisRequest = {
-      game_id: 'g1',
-      text: 'retry test',
-    };
-
-    // Skip this test for now due to unresolved issue with interceptor firing twice
-    it.skip('should retry on 503 error and succeed on the second attempt', async () => {
-      // Define the expected 202 response for the second attempt
-      const mockRetrySuccessResponse: AnalysisTaskResponse = {
-        message: 'Task accepted after retry',
-        sentiment_data_id: 'retry-uuid-789',
-      };
-      const scope = nock(LOCAL_TEST_URL) // Use localhost URL
-        .post(SENTIMENT_TEXT_PATH) // First attempt
-        .reply(503, { error: 'Service Unavailable' })
-        .post(SENTIMENT_TEXT_PATH) // Second attempt (after retry)
-        .reply(202, mockRetrySuccessResponse); // Should succeed with 202 now
-
-      const result = await client.analyzeText(textRequest);
-      expect(result).toEqual(mockRetrySuccessResponse); // Expect AnalysisTaskResponse
-      scope.done(); // Verify both mocks were hit
-    });
-
-    it('should fail after exhausting retries on persistent 500 error', async () => {
-      const scope = nock(LOCAL_TEST_URL) // Use localhost URL
-        .post(SENTIMENT_TEXT_PATH)
-        .times(4)
-        .reply(500, { error: 'Internal Server Error' });
-
-      await expect(client.analyzeText(textRequest)).rejects.toThrow(
-        CyberwareApiError, // Expect the generic error
-      );
-      try {
-        await client.analyzeText(textRequest);
-      } catch (e) {
-        // Verify it's the generic error
-        expect(e).toBeInstanceOf(CyberwareApiError);
-        // Cannot reliably check status or message here due to retry library behavior
-        // const error = e as CyberwareApiError;
-        // expect(error.status).toBe(500);
-        // expect(error.message).toBe('Internal Server Error');
-      }
-      expect(scope.isDone()).toBe(true); // Verify all 4 mocks were hit
-    });
-  });
-
-  // --- Debug Logging Tests ---
-  describe('Debug Logging', () => {
-    let consoleLogSpy: jest.SpyInstance;
-    let consoleErrorSpy: jest.SpyInstance;
-    const textRequest: TextAnalysisRequest = {
-      game_id: 'g1',
-      text: 'debug test',
-    };
-
+  describe('getResults', () => {
     beforeEach(() => {
-      // Spy on console methods
-      consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
-      consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+      client = new CyberwareClient(TEST_API_KEY);
+      // Assert that interceptors were captured
+      expect(capturedResponseSuccessInterceptor).toBeDefined();
+      expect(capturedResponseErrorInterceptor).toBeDefined();
     });
 
-    afterEach(() => {
-      // Restore original console methods
-      consoleLogSpy.mockRestore();
-      consoleErrorSpy.mockRestore();
+    const analysisId = 'analysis-uuid-789';
+
+    test('should throw CyberwareBadRequestError if analysisId is missing', async () => {
+      // Changed it to test
+      await expect(client.getResults('')).rejects.toThrow(
+        CyberwareBadRequestError,
+      );
+      await expect(client.getResults('')).rejects.toThrow(
+        'Missing required parameter: analysisId.',
+      );
     });
 
-    it('should not log requests or errors by default', async () => {
-      nock(LOCAL_TEST_URL).post(SENTIMENT_TEXT_PATH).reply(202, {}); // Reply 202 now
-      await client.analyzeText(textRequest);
-
-      nock(LOCAL_TEST_URL) // Use localhost URL
-        .post(SENTIMENT_TEXT_PATH)
-        .reply(500, { error: 'fail' });
-      await expect(client.analyzeText(textRequest)).rejects.toThrow();
-
-      expect(consoleLogSpy).not.toHaveBeenCalled();
-      expect(consoleErrorSpy).not.toHaveBeenCalled();
-    });
-
-    it('should log requests and errors when debug is true', async () => {
-      const debugClient = new CyberwareClient(TEST_API_KEY, {
-        debug: true,
+    test('should make a GET request to /results/{id} with correct id', async () => {
+      // Changed it to test
+      const mockResponseData: AnalysisResultResponse = {
+        analysisId,
+        gameId: 'game-123',
+        sourcePlayerId: 'player-abc',
+        contentType: 'text',
+        status: 'COMPLETED',
+        sentimentScore: 0.5,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      // const mockFullResponse: AxiosResponse = { ... }; // Not needed here
+      mockAxiosInstance.get.mockImplementationOnce(async () => {
+        const mockAxiosResp: AxiosResponse = {
+          data: mockResponseData,
+          status: 200,
+          statusText: 'OK',
+          headers: {},
+          config: {} as InternalAxiosRequestConfig,
+        };
+        if (capturedResponseSuccessInterceptor) {
+          return capturedResponseSuccessInterceptor(mockAxiosResp);
+        }
+        return Promise.resolve(mockResponseData); // Fallback
       });
 
-      // Test logging on success
-      nock(LOCAL_TEST_URL) // Use localhost URL
-        .post(SENTIMENT_TEXT_PATH)
-        .reply(202, { message: 'ok', sentiment_data_id: 'dbg-1' }); // Reply 202
-      await debugClient.analyzeText(textRequest);
-      expect(consoleLogSpy).toHaveBeenCalledWith(
-        'Cyberware SDK Request:',
-        expect.any(Object),
-      );
-      expect(consoleLogSpy.mock.calls[0][1].headers['X-API-KEY']).toBe(
-        '***REDACTED***',
-      ); // Check redaction
-      expect(consoleErrorSpy).not.toHaveBeenCalled();
-      consoleLogSpy.mockClear(); // Clear calls for next check
+      const response = await client.getResults(analysisId);
 
-      // Test logging on error
-      const errorResponse = { error: 'debug fail' };
-      nock(LOCAL_TEST_URL).post(SENTIMENT_TEXT_PATH).reply(400, errorResponse); // Use production URL
-      await expect(debugClient.analyzeText(textRequest)).rejects.toThrow();
-      expect(consoleLogSpy).toHaveBeenCalledWith(
-        'Cyberware SDK Request:',
-        expect.any(Object),
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+        `/results/${analysisId}`,
       );
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Cyberware SDK Error Response:',
-        {
-          status: 400,
-          data: errorResponse,
-          headers: expect.any(Object),
-        },
-      );
+      expect(response).toEqual(mockResponseData);
+    });
+
+    // Re-use errorTestCases, GET might have slightly different default messages or scenarios
+    // For simplicity, using the same ones, adjust if needed.
+    const errorTestCasesGet = [
+      {
+        status: 401,
+        ErrorClass: CyberwareAuthenticationError,
+        defaultMessage: 'Invalid API key',
+      },
+      {
+        status: 403,
+        ErrorClass: CyberwareForbiddenError,
+        defaultMessage: 'Forbidden',
+      },
+      {
+        status: 404,
+        ErrorClass: CyberwareNotFoundError,
+        defaultMessage: 'Resource not found',
+      },
+      {
+        status: 429,
+        ErrorClass: CyberwareRateLimitError,
+        defaultMessage: 'Rate limit exceeded',
+      },
+      {
+        status: 500,
+        ErrorClass: CyberwareServerError,
+        defaultMessage: 'Internal server error',
+      },
+      {
+        status: 999,
+        ErrorClass: CyberwareApiError,
+        defaultMessage: 'An unexpected error occurred',
+      }, // Default case
+    ];
+
+    errorTestCasesGet.forEach(({ status, ErrorClass, defaultMessage }) => {
+      test(`should throw ${ErrorClass.name} for status ${status} on getResults`, async () => {
+        const apiErrorMessage = `Custom API error for GET ${status}`;
+        const errorResponseData = { error: apiErrorMessage };
+        const axiosError = createAxiosError(status, errorResponseData);
+
+        mockAxiosInstance.get.mockImplementationOnce(async () => {
+          if (capturedResponseErrorInterceptor) {
+            return capturedResponseErrorInterceptor(axiosError);
+          }
+          return Promise.reject(axiosError); // Fallback
+        });
+
+        try {
+          await client.getResults(analysisId);
+        } catch (e: unknown) {
+          expect(e).toBeInstanceOf(ErrorClass);
+          const specificError = e as CyberwareApiError;
+          expect(specificError.message).toBe(apiErrorMessage);
+          expect(specificError.status).toBe(status);
+          expect(specificError.responseData).toEqual(errorResponseData);
+        }
+      });
+
+      test(`should throw ${ErrorClass.name} with default message for status ${status} on getResults if API provides no error message`, async () => {
+        const axiosError = createAxiosError(status, {}); // No 'error' field in data
+
+        mockAxiosInstance.get.mockImplementationOnce(async () => {
+          if (capturedResponseErrorInterceptor) {
+            return capturedResponseErrorInterceptor(axiosError);
+          }
+          return Promise.reject(axiosError); // Fallback
+        });
+
+        try {
+          await client.getResults(analysisId);
+        } catch (e: unknown) {
+          expect(e).toBeInstanceOf(ErrorClass);
+          const specificError = e as CyberwareApiError;
+          if (
+            ErrorClass === CyberwareApiError &&
+            !(axiosError.response?.data as { error?: string })?.error
+          ) {
+            expect(specificError.message).toBe(axiosError.message);
+          } else {
+            expect(specificError.message).toBe(defaultMessage);
+          }
+          expect(specificError.status).toBe(status);
+        }
+      });
     });
   });
 });

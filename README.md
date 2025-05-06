@@ -6,7 +6,9 @@ Node.js SDK for interacting with the Cyberware API, initially focusing on sentim
 
 ## Features
 
-*   Simple interface for `analyzeText` and `analyzeAudio` endpoints.
+*   Simple interface for submitting content analysis tasks (`analyze` method).
+*   Supports different content types (`text`, `event_log`, etc.) via the `contentType` parameter.
+*   Method to retrieve analysis results by ID (`getResults` method).
 *   Built-in API Key authentication (`X-API-KEY`).
 *   Automatic retries for transient errors (e.g., rate limits, server errors).
 *   Typed requests and responses using TypeScript.
@@ -26,8 +28,9 @@ yarn add cyberware-node-sdk
 ```typescript
 import {
   CyberwareClient,
-  TextAnalysisRequest,
-  AudioAnalysisRequest,
+  AnalysisRequest, // Updated
+  AnalysisTaskResponse, // Response for analyze
+  AnalysisResultResponse, // Response for getResults
   CyberwareApiError,
 } from 'cyberware-node-sdk';
 
@@ -47,40 +50,40 @@ const client = new CyberwareClient(apiKey, {
   // retryConfig: { retries: 5 } // Default is 3 retries
 });
 
-// --- Analyze Text ---
-const textRequest: TextAnalysisRequest = {
-  game_id: 'your-game-id',
-  text: 'This game is amazing!',
-  server_id: 'optional-server-id',
+// --- Submit Analysis Task ---
+const analysisRequest: AnalysisRequest = {
+  gameId: 'your-game-id',
+  contentType: 'text', // Specify content type
+  rawContent: 'This game is amazing!', // Provide content directly
+  sourcePlayerId: 'player-123',
+  // eventLogUrl: 'https://...', // Or provide a URL for event_log type
+  // webhookUrl: 'https://...', // Optional webhook
 };
 
-client.analyzeText(textRequest)
-  .then(result => {
-    console.log('Text Analysis Result:', result);
-    // Handle 200 OK or 202 Accepted response
+let submittedAnalysisId: string | null = null;
+
+client.analyze(analysisRequest)
+  .then((taskResponse: AnalysisTaskResponse) => {
+    console.log('Analysis Task Submitted:', taskResponse);
+    console.log(` -> Analysis ID: ${taskResponse.analysisId}`);
+    submittedAnalysisId = taskResponse.analysisId; // Store ID for fetching results
+
+    // --- Get Analysis Results (Example) ---
+    if (submittedAnalysisId) {
+      // In a real app, wait for webhook or poll after a delay
+      return client.getResults(submittedAnalysisId);
+    } else {
+      return Promise.reject('No Analysis ID obtained');
+    }
+  })
+  .then((resultsResponse: AnalysisResultResponse) => {
+    console.log('\nFetched Analysis Results:', resultsResponse);
+    console.log(` -> Status: ${resultsResponse.status}`);
+    console.log(` -> Sentiment: ${resultsResponse.sentimentScore ?? 'N/A'}`);
+    console.log(` -> Toxicity: ${resultsResponse.toxicityScore ?? 'N/A'}`);
   })
   .catch(error => {
-    console.error('Text Analysis Failed:', error);
-    // Handle specific errors (see Error Handling section)
-  });
-
-// --- Analyze Audio ---
-// Ensure you have the audio data base64 encoded
-const audioBase64Data = '...your base64 encoded audio...'; // Replace with actual data
-
-const audioRequest: AudioAnalysisRequest = {
-  game_id: 'your-game-id',
-  audio_base64: audioBase64Data,
-  server_id: 'optional-server-id',
-};
-
-client.analyzeAudio(audioRequest)
-  .then(result => {
-    console.log('Audio Analysis Result:', result);
-    // Handle 200 OK or 202 Accepted response
-  })
-  .catch(error => {
-    console.error('Audio Analysis Failed:', error);
+    console.error('\nAnalysis Operation Failed:', error);
     // Handle specific errors (see Error Handling section)
   });
 
@@ -113,6 +116,7 @@ const client = new CyberwareClient(apiKey, options);
 The SDK throws specific error classes that extend the base `CyberwareApiError` for easier handling:
 
 - `CyberwareAuthenticationError` (401)
+- `CyberwareForbiddenError` (403) // Added
 - `CyberwareBadRequestError` (400)
 - `CyberwareNotFoundError` (404)
 - `CyberwareRateLimitError` (429)
@@ -133,9 +137,9 @@ import {
   // ... other error types
 } from 'cyberware-node-sdk';
 
-const client = new CyberwareClient('invalid-key');
+const client = new CyberwareClient('cyw-key');
 
-client.analyzeText({ game_id: 'g1', text: 'test' })
+client.analyze({ gameId: 'g1', contentType: 'text', rawContent: 'test', sourcePlayerId: 'p1' }) // Updated method
   .catch(error => {
     if (error instanceof CyberwareAuthenticationError) {
       console.error(`Authentication Failed (Status: ${error.status}): ${error.message}`);

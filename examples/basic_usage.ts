@@ -4,12 +4,13 @@
 // Adjust the import path based on how you install/use the SDK (e.g., 'cyberware-node-sdk' or '../dist')
 import {
   CyberwareClient,
-  TextAnalysisRequest,
-  AudioAnalysisRequest,
+  AnalysisRequest, // Updated
   AnalysisTaskResponse,
+  AnalysisResultResponse, // Added
   CyberwareApiError,
   CyberwareAuthenticationError,
   CyberwareBadRequestError,
+  // CyberwareForbiddenError could be added if specific handling is desired
 } from '../src'; // Using relative path to src for local testing
 
 // --- Configuration ---
@@ -40,60 +41,92 @@ console.log('Cyberware Client Initialized.');
 // --- Example Data ---
 
 const gameId = 'your-actual-game-id'; // Replace with a valid Game ID
-const serverId = 'server-123'; // Optional server ID
+const sourcePlayerId = 'player-example-123'; // Example Source Player ID
 
 // --- Main Function ---
 
 async function runExamples() {
+  let successfulAnalysisId: string | null = null; // To store ID for getResults example
+
   console.log('\n--- Running Text Analysis Example ---');
   try {
-    const textRequest: TextAnalysisRequest = {
-      game_id: gameId,
-      text: 'This interaction was really positive and helpful!',
-      server_id: serverId,
+    const textRequest: AnalysisRequest = {
+      gameId: gameId,
+      contentType: 'text',
+      rawContent: 'This interaction was really positive and helpful!',
+      sourcePlayerId: sourcePlayerId,
+      // webhookUrl: 'https://your-webhook-endpoint.com/results' // Optional
     };
     console.log('Submitting text analysis request:', textRequest);
     const textResponse: AnalysisTaskResponse =
-      await client.analyzeText(textRequest);
+      await client.analyze(textRequest);
     console.log('Text Analysis Task Accepted:');
     console.log(`  Message: ${textResponse.message}`);
-    console.log(`  Sentiment Data ID: ${textResponse.sentiment_data_id}`);
+    console.log(`  Analysis ID: ${textResponse.analysisId}`); // Updated field name
+    successfulAnalysisId = textResponse.analysisId; // Store for later use
   } catch (error) {
     handleApiError('Text Analysis', error);
   }
 
-  console.log('\n--- Running Audio Analysis Example ---');
+  console.log('\n--- Running Event Log Analysis Example ---');
   try {
-    // Example: Base64 encode a simple dummy audio file content (replace with real data)
-    const dummyAudioContent = 'This is simulated audio content.';
-    const audioBase64 = Buffer.from(dummyAudioContent).toString('base64');
-
-    const audioRequest: AudioAnalysisRequest = {
-      game_id: gameId,
-      audio_base64: audioBase64,
-      server_id: serverId,
+    const eventLogRequest: AnalysisRequest = {
+      gameId: gameId,
+      contentType: 'event_log', // Using event_log type
+      eventLogUrl: 'https://example.com/path/to/your/game/event.log', // URL to the log file
+      sourcePlayerId: 'player-event-log-456',
+      // rulesetUrl: 'https://example.com/path/to/your/ruleset.json' // Optional
     };
-    console.log('Submitting audio analysis request (with dummy data):');
-    const audioResponse: AnalysisTaskResponse =
-      await client.analyzeAudio(audioRequest);
-    console.log('Audio Analysis Task Accepted:');
-    console.log(`  Message: ${audioResponse.message}`);
-    console.log(`  Sentiment Data ID: ${audioResponse.sentiment_data_id}`);
+    console.log('Submitting event log analysis request:', eventLogRequest);
+    const eventLogResponse: AnalysisTaskResponse =
+      await client.analyze(eventLogRequest);
+    console.log('Event Log Analysis Task Accepted:');
+    console.log(`  Message: ${eventLogResponse.message}`);
+    console.log(`  Analysis ID: ${eventLogResponse.analysisId}`); // Updated field name
   } catch (error) {
-    handleApiError('Audio Analysis', error);
+    handleApiError('Event Log Analysis', error);
+  }
+
+  // Example of getting results (if a previous analysis was successful)
+  if (successfulAnalysisId) {
+    console.log('\n--- Running Get Results Example ---');
+    console.log(
+      `Attempting to fetch results for Analysis ID: ${successfulAnalysisId}`,
+    );
+    try {
+      // Add a small delay to allow analysis to potentially complete (in a real scenario, use webhooks or polling)
+      await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2 seconds
+
+      const results: AnalysisResultResponse =
+        await client.getResults(successfulAnalysisId);
+      console.log('Successfully fetched analysis results:');
+      console.log(`  Status: ${results.status}`);
+      console.log(`  Sentiment Score: ${results.sentimentScore ?? 'N/A'}`);
+      console.log(`  Toxicity Score: ${results.toxicityScore ?? 'N/A'}`);
+      console.log(`  Details:`, results.details ?? {});
+      // Log other fields as needed
+    } catch (error) {
+      handleApiError(`Get Results (ID: ${successfulAnalysisId})`, error);
+    }
+  } else {
+    console.log(
+      '\n--- Skipping Get Results Example (No successful analysis ID obtained) ---',
+    );
   }
 
   // Example of handling a specific error (e.g., bad request)
   console.log('\n--- Running Bad Request Example ---');
   try {
-    const badTextRequest: TextAnalysisRequest = {
-      game_id: gameId,
-      // Missing 'text' field intentionally
-    } as TextAnalysisRequest;
-    console.log('Submitting bad text request:', badTextRequest);
-    await client.analyzeText(badTextRequest);
+    // Missing required 'sourcePlayerId' field intentionally
+    const badRequest: AnalysisRequest = {
+      gameId: gameId,
+      contentType: 'text',
+      rawContent: 'This request is bad.',
+    } as AnalysisRequest;
+    console.log('Submitting bad request:', badRequest);
+    await client.analyze(badRequest);
   } catch (error) {
-    handleApiError('Bad Text Request', error);
+    handleApiError('Bad Request', error);
   }
 }
 

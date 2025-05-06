@@ -1,10 +1,19 @@
 // examples/telegram_listener.ts
 
 import TelegramBot from 'node-telegram-bot-api';
+import {
+  CyberwareClient,
+  AnalysisRequest,
+  CyberwareApiError,
+  CyberwareAuthenticationError,
+  CyberwareBadRequestError,
+} from '../src'; // Adjust path as needed
 
 // --- Configuration ---
-// IMPORTANT: Load your Telegram Bot Token securely!
+// IMPORTANT: Load secrets securely!
 const telegramToken = process.env.TELEGRAM_BOT_TOKEN;
+const apiKey = process.env.CYBERWARE_API_KEY;
+const gameId = 'your-telegram-game-id'; // Replace with your actual Game ID for Telegram
 
 if (!telegramToken) {
   console.error(
@@ -13,6 +22,17 @@ if (!telegramToken) {
   );
   process.exit(1);
 }
+if (!apiKey) {
+  console.error(
+    'Error: CYBERWARE_API_KEY environment variable is not set.',
+    'Please set it before running the example.',
+  );
+  process.exit(1);
+}
+
+// --- Cyberware Client Setup ---
+const cyberwareClient = new CyberwareClient(apiKey, { debug: false });
+console.log('Cyberware Client Initialized.');
 
 // --- Telegram Bot Setup ---
 
@@ -24,7 +44,8 @@ const bot = new TelegramBot(telegramToken, { polling: true });
 // --- Event Handlers ---
 
 // Matches any text message
-bot.on('message', (msg) => {
+bot.on('message', async (msg) => {
+  // Added async keyword here
   // Ignore commands or non-text messages for this simple example
   if (!msg.text || msg.text.startsWith('/')) return;
 
@@ -38,19 +59,29 @@ bot.on('message', (msg) => {
     `[Telegram] Chat: "${chatTitle}" (${chatId}) | User: ${userName} (${userId}) | Message: "${text}"`,
   );
 
-  // --- Potential Cyberware SDK Integration Point ---
-  // Here you could potentially call the Cyberware SDK's analyzeText method:
-  /*
-  try {
-    // Initialize cyberwareClient earlier in the script
-    const analysisRequest = { game_id: 'your-telegram-game-id', text: text };
-    const task = await cyberwareClient.analyzeText(analysisRequest);
-    console.log(` -> Sent to Cyberware for analysis (Task ID: ${task.sentiment_data_id})`);
-  } catch (error) {
-    console.error(' -> Failed to send message to Cyberware:', error);
+  // --- Cyberware SDK Integration ---
+
+  if (userId) {
+    // Ensure we have a user ID
+    try {
+      const analysisRequest: AnalysisRequest = {
+        gameId: gameId,
+        contentType: 'text',
+        rawContent: text,
+        sourcePlayerId: userId.toString(), // Using Telegram user ID as source player ID
+        // You could add webhookUrl here if needed
+      };
+      const task = await cyberwareClient.analyze(analysisRequest);
+      console.log(
+        ` -> Sent to Cyberware for analysis (Analysis ID: ${task.analysisId})`,
+      );
+    } catch (error) {
+      handleApiError(`Cyberware Analysis for message "${text}"`, error);
+    }
+  } else {
+    console.log(' -> Skipping Cyberware analysis (missing user ID)');
   }
-  */
-  // --------------------------------------------------
+  // ---------------------------------
 
   // Optional: Send a reply back to the chat (for testing)
   // bot.sendMessage(chatId, 'Received your message!');
@@ -63,3 +94,33 @@ bot.on('polling_error', (error) => {
 });
 
 console.log('Telegram Bot is listening for messages...');
+
+// --- Helper Function for Cyberware Error Handling ---
+
+function handleApiError(context: string, error: unknown) {
+  console.error(`Error during ${context}:`);
+  if (error instanceof CyberwareAuthenticationError) {
+    console.error(
+      `  Authentication Failed (Status: ${error.status}): ${error.message}`,
+    );
+    console.error('  >> Check if your API key is correct and active.');
+  } else if (error instanceof CyberwareBadRequestError) {
+    console.error(`  Bad Request (Status: ${error.status}): ${error.message}`);
+    console.error(
+      '  >> Check the request payload for missing or invalid fields.',
+    );
+    if (error.responseData) {
+      console.error('  >> API Response:', error.responseData);
+    }
+  } else if (error instanceof CyberwareApiError) {
+    console.error(
+      `  API Error (Status: ${error.status || 'N/A'}): ${error.message}`,
+    );
+    if (error.responseData) {
+      console.error('  >> API Response:', error.responseData);
+    }
+  } else {
+    // Catch unexpected non-API errors
+    console.error('  An unexpected error occurred:', error);
+  }
+}
