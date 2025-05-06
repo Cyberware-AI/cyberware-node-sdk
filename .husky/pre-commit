@@ -1,6 +1,6 @@
 #!/usr/bin/env shaaAq 
 
 # Run linter
-npm run lint
+bun run lint
 # Run tests
-npm test
+bun test
