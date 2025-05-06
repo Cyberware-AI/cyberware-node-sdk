@@ -1,14 +1,20 @@
 {
   "name": "@cyberware-ai/node-sdk",
   "version": "0.1.2",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    "types": "./dist/index.d.ts",
+    "import": "./dist/index.js",
+    "require": "./dist/index.cjs"
+  },
   "scripts": {
-    "build": "tsc",
+    "build": "bun run build.ts",
     "lint": "eslint src/**/*.ts examples/**/*.ts",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\" \"examples/**/*.ts\"",
     "test": "jest",
-    "prepublishOnly": "npm run lint && npm run test && npm run build",
+    "prepublishOnly": "bun run lint && bun run test && bun run build",
     "prepare": "husky"
   },
   "keywords": [
@@ -38,6 +44,8 @@
     "axios-retry": "^4.5.0"
   },
   "devDependencies": {
+    "@types/bun": "^1.2.12",
+    "bun-plugin-dts": "^0.3.0",
     "@types/jest": "^29.5.14",
     "@types/nock": "^11.1.0",
     "@types/node": "^20.14.9",
