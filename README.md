@@ -16,7 +16,7 @@ Node.js SDK for interacting with the Cyberware API, initially focusing on sentim
 ## Installation
 
 ```bash
-npm install cyberware-node-sdk
+npm install @cyberwareai/node-sdk
 # or
 yarn add cyberware-node-sdk
 ```
@@ -29,7 +29,7 @@ import {
   TextAnalysisRequest,
   AudioAnalysisRequest,
   CyberwareApiError,
-} from 'cyberware-node-sdk';
+} from '@cyberwareai/node-sdk';
 
 // Retrieve API key securely (e.g., from environment variables)
 const apiKey = process.env.CYBERWARE_API_KEY;
@@ -131,7 +131,7 @@ import {
   CyberwareAuthenticationError,
   CyberwareBadRequestError,
   // ... other error types
-} from 'cyberware-node-sdk';
+} from '@cyberwareai/node-sdk';
 
 const client = new CyberwareClient('invalid-key');
 
