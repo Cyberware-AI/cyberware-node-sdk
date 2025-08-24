@@ -21,6 +21,7 @@ jobs:
           node-version: 20
           registry-url: 'https://registry.npmjs.org'
           scope: '@cyberwareai'
+          always-auth: true
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
@@ -33,14 +34,18 @@ jobs:
       - name: Build package
         run: bun run build || npm run build
 
-      - name: npm diagnostics
+      - name: Configure npm auth
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+          echo "@cyberwareai:registry=https://registry.npmjs.org" >> ~/.npmrc
+
+      - name: npm diagnostics
         run: |
           echo "whoami: $(npm whoami 2>/dev/null || echo '<not authed>')"
-          echo "ls org packages (may be empty if first publish):"
-          npm access ls-packages @cyberwareai || true
-          npm config set always-auth true
+          echo "list org packages (may be empty on first publish):"
+          npm access list packages @cyberwareai || true
 
       - name: Determine publish necessity
         id: should_publish
