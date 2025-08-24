@@ -6,3 +6,10 @@
 ---
 
 
+---
+**Date:** 2025-08-25 00:18
+**File(s):** git history, `.gitignore`
+**Summary:** Removed `.npmrc` (contained npm token) from entire git history, ensured `.npmrc` is ignored, and force-pushed clean `main`.
+**Reason:** GitHub push protection blocked push due to detected npm access token in `.npmrc`.
+---
+

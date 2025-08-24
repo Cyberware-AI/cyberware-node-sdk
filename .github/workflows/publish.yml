@@ -33,6 +33,15 @@ jobs:
       - name: Build package
         run: bun run build || npm run build
 
+      - name: npm diagnostics
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          echo "whoami: $(npm whoami 2>/dev/null || echo '<not authed>')"
+          echo "ls org packages (may be empty if first publish):"
+          npm access ls-packages @cyberwareai || true
+          npm config set always-auth true
+
       - name: Determine publish necessity
         id: should_publish
         shell: bash
