@@ -33,3 +33,10 @@
 **Summary:** Added Husky pre-commit step to run Prettier across the repository and re-stage changes; added `format:all` npm script; created `.prettierignore` to skip build artifacts and dependencies.
 **Reason:** Ensure consistent formatting before each commit and avoid formatting generated files.
 ---
+
+---
+**Date:** 2025-08-31 00:00
+**File(s):** `.husky/pre-push`, `package.json`
+**Summary:** Added pre-push hook to block pushes when formatting (prettier --check), linting, or tests fail. Introduced `format:check` script.
+**Reason:** Prevent pushing code that breaks formatting, linting, or tests.
+---

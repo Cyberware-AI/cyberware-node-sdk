@@ -1,0 +1,30 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "Running pre-push checks..."
+
+# Ensure formatting is clean (no changes needed)
+npm run format:check
+if [ $? -ne 0 ]; then
+  echo "Prettier check failed. Please run 'npm run format:all' and commit the changes."
+  exit 1
+fi
+
+# Lint
+npm run lint
+if [ $? -ne 0 ]; then
+  echo "Linting failed. Please fix lint errors before pushing."
+  exit 1
+fi
+
+# Tests
+npm test
+if [ $? -ne 0 ]; then
+  echo "Tests failed. Please fix tests before pushing."
+  exit 1
+fi
+
+echo "Pre-push checks passed."
+exit 0
+
+

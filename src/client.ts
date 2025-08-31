@@ -166,8 +166,10 @@ export class CyberwareClient {
         // REMOVED the specific debug log here
         return this.transformApiResponse(response.data);
       }) as unknown as (
-        value: AxiosResponse<any, any>,
-      ) => AxiosResponse<any, any> | Promise<AxiosResponse<any, any>>,
+        value: AxiosResponse<unknown, unknown>,
+      ) =>
+        | AxiosResponse<unknown, unknown>
+        | Promise<AxiosResponse<unknown, unknown>>,
       // On error, wrap it in a custom error class
       (error: AxiosError<ApiErrorResponse>) => {
         // Re-add the logic to check _lastErrorData

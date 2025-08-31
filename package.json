@@ -8,6 +8,7 @@
     "lint": "eslint src/**/*.ts examples/**/*.ts",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\" \"examples/**/*.ts\"",
     "format:all": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "jest",
     "prepublishOnly": "npm run lint && npm run test && npm run build",
     "prepare": "husky"
