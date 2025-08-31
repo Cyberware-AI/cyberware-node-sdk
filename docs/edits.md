@@ -26,3 +26,10 @@
 **Reason:** Keep SDK metadata in sync with published package without manual updates.
 ---
 
+
+---
+**Date:** 2025-08-31 00:00
+**File(s):** `.husky/pre-commit`, `package.json`, `.prettierignore`
+**Summary:** Added Husky pre-commit step to run Prettier across the repository and re-stage changes; added `format:all` npm script; created `.prettierignore` to skip build artifacts and dependencies.
+**Reason:** Ensure consistent formatting before each commit and avoid formatting generated files.
+---

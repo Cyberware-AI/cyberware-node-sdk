@@ -112,20 +112,26 @@ export class CyberwareClient {
    * @returns The transformed data with camelCase properties.
    * @private
    */
-  private transformApiResponse(data: any): any {
+  private transformApiResponse(data: unknown): unknown {
     if (!data || typeof data !== 'object') {
       return data;
     }
-    
-    const transformed = { ...data };
-    
+
+    if (Array.isArray(data)) {
+      return data;
+    }
+
+    const transformed: Record<string, unknown> = {
+      ...(data as Record<string, unknown>),
+    };
+
     // Transform specific known snake_case properties
     // Note: The API now returns analysisId directly, but keeping this for backwards compatibility
     if ('sentiment_data_id' in transformed) {
       transformed.analysisId = transformed.sentiment_data_id;
       delete transformed.sentiment_data_id;
     }
-    
+
     return transformed;
   }
 
@@ -155,11 +161,13 @@ export class CyberwareClient {
 
     // Response Interceptor
     this.client.interceptors.response.use(
-      // On success, transform response data and return it
-      (response: AxiosResponse) => {
+      // On success, transform response data and return it (cast to satisfy Axios types)
+      ((response: AxiosResponse) => {
         // REMOVED the specific debug log here
         return this.transformApiResponse(response.data);
-      },
+      }) as unknown as (
+        value: AxiosResponse<any, any>,
+      ) => AxiosResponse<any, any> | Promise<AxiosResponse<any, any>>,
       // On error, wrap it in a custom error class
       (error: AxiosError<ApiErrorResponse>) => {
         // Re-add the logic to check _lastErrorData
@@ -229,23 +237,31 @@ export class CyberwareClient {
   async analyzeText(
     request: TextAnalysisRequest,
   ): Promise<AnalysisTaskResponse> {
-    if (!request || !request.gameId || !request.rawContent || !request.sourcePlayerId) {
+    if (
+      !request ||
+      !request.gameId ||
+      !request.rawContent ||
+      !request.sourcePlayerId
+    ) {
       throw new CyberwareBadRequestError(
         'Missing required fields: gameId, rawContent, and sourcePlayerId are required for text analysis.',
       );
     }
-    
+
     // Add SDK metadata automatically
     const requestWithMetadata = {
       ...request,
       sdkName: SDK_NAME,
       sdkVersion: SDK_VERSION,
     };
-    
+
     // The interceptor handles extracting the data or throwing the correct error
     // API returns 202 Accepted with AnalysisTaskResponse
     // @ts-expect-error Linter incorrectly flags return type due to interceptor complexity
-    return this.client.post<AnalysisTaskResponse>('/analyze', requestWithMetadata);
+    return this.client.post<AnalysisTaskResponse>(
+      '/analyze',
+      requestWithMetadata,
+    );
   }
 
   /**
@@ -264,22 +280,30 @@ export class CyberwareClient {
   async analyzeAudio(
     request: AudioAnalysisRequest,
   ): Promise<AnalysisTaskResponse> {
-    if (!request || !request.gameId || !request.rawContent || !request.sourcePlayerId) {
+    if (
+      !request ||
+      !request.gameId ||
+      !request.rawContent ||
+      !request.sourcePlayerId
+    ) {
       throw new CyberwareBadRequestError(
         'Missing required fields: gameId, rawContent, and sourcePlayerId are required for audio analysis.',
       );
     }
-    
+
     // Add SDK metadata automatically
     const requestWithMetadata = {
       ...request,
       sdkName: SDK_NAME,
       sdkVersion: SDK_VERSION,
     };
-    
+
     // The interceptor handles extracting the data or throwing the correct error
     // API returns 202 Accepted with AnalysisTaskResponse
     // @ts-expect-error Linter incorrectly flags return type due to interceptor complexity
-    return this.client.post<AnalysisTaskResponse>('/analyze', requestWithMetadata);
+    return this.client.post<AnalysisTaskResponse>(
+      '/analyze',
+      requestWithMetadata,
+    );
   }
 }

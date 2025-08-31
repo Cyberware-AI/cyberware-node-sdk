@@ -3,6 +3,16 @@
 
 echo "Running pre-commit hooks..."
 
+# Run Prettier across the repository
+npm run format:all
+if [ $? -ne 0 ]; then
+  echo "Prettier formatting failed. Please fix formatting issues before committing."
+  exit 1
+fi
+
+# Re-stage any files changed by Prettier so they're included in this commit
+git add -A
+
 # Run linter
 npm run lint
 if [ $? -ne 0 ]; then

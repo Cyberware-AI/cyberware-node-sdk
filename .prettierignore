@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+/dist/
+/coverage/
+
+# Logs
+*.log
+
+# Package manager locks
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+bun.lockb
+
+# Misc
+.git/
