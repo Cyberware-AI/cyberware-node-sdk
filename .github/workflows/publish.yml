@@ -42,27 +42,10 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Increment version
+      - name: Get version info
         run: |
-          # Get current version for logging
           CURRENT_VERSION=$(node -p "require('./package.json').version")
-          echo "Current version: $CURRENT_VERSION"
-          
-          # Increment patch version
-          npm version patch --no-git-tag-version
-          
-          # Get new version for logging
-          NEW_VERSION=$(node -p "require('./package.json').version")
-          echo "New version: $NEW_VERSION"
-
-      - name: Commit and push version bump
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git add package.json
-          NEW_VERSION=$(node -p "require('./package.json').version")
-          git commit -m "chore: bump version to $NEW_VERSION [skip ci]"
-          git push
+          echo "Publishing version: $CURRENT_VERSION"
 
       - name: Build package
         run: bun run build || npm run build
