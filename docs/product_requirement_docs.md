@@ -8,11 +8,11 @@
 
 ## 2. Requirements
 
-- [X] Implement `CyberwareClient` class.
-- [X] Support API Key (`X-API-KEY`) authentication.
-- [X] Implement `analyzeText` method (`POST /sentiment/text`).
-- [X] Implement `analyzeAudio` method (`POST /sentiment/audio`).
-- [X] Include robust error handling (custom errors, retries).
+- [x] Implement `CyberwareClient` class.
+- [x] Support API Key (`X-API-KEY`) authentication.
+- [x] Implement `analyzeText` method (`POST /sentiment/text`).
+- [x] Implement `analyzeAudio` method (`POST /sentiment/audio`).
+- [x] Include robust error handling (custom errors, retries).
 - [ ] Provide clear documentation (README, TSDoc).
 - [ ] Include unit tests.
 
@@ -20,4 +20,4 @@
 
 - Support for other API endpoints (Auth, Games, API Keys, etc.).
 - Support for Bearer Token authentication.
-- Browser compatibility (focus on Node.js environment). 
+- Browser compatibility (focus on Node.js environment).

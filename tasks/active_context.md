@@ -25,4 +25,4 @@
 
 - Consider adding User-Agent header (Low Priority).
 - Consider investigating skipped retry test further (Known Issue).
-- Prepare for potential v0.1.0 release/packaging. 
+- Prepare for potential v0.1.0 release/packaging.

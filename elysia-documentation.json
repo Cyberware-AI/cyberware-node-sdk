@@ -23,10 +23,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "message",
-                    "analysisId"
-                  ]
+                  "required": ["message", "analysisId"]
                 }
               },
               "multipart/form-data": {
@@ -40,10 +37,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "message",
-                    "analysisId"
-                  ]
+                  "required": ["message", "analysisId"]
                 }
               },
               "text/plain": {
@@ -57,10 +51,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "message",
-                    "analysisId"
-                  ]
+                  "required": ["message", "analysisId"]
                 }
               }
             }
@@ -76,9 +67,7 @@
                     },
                     "details": {}
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "multipart/form-data": {
@@ -90,9 +79,7 @@
                     },
                     "details": {}
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "text/plain": {
@@ -104,9 +91,7 @@
                     },
                     "details": {}
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -121,9 +106,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "multipart/form-data": {
@@ -134,9 +117,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "text/plain": {
@@ -147,9 +128,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -164,9 +143,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "multipart/form-data": {
@@ -177,9 +154,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "text/plain": {
@@ -190,9 +165,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -207,9 +180,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "multipart/form-data": {
@@ -220,9 +191,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "text/plain": {
@@ -233,9 +202,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -250,9 +217,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "multipart/form-data": {
@@ -263,9 +228,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "text/plain": {
@@ -276,9 +239,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -287,9 +248,7 @@
         "operationId": "postApiV1Analyze",
         "summary": "Submit content for analysis",
         "description": "Accepts content (text, audio link, etc.) for sentiment and toxicity analysis. Requires authentication via an X-API-Key header. The API key must be valid for the user and optionally linked to the specified gameId.\n\nServer Context: Optional serverId parameter accepts unified server ID (works for both game servers and community servers).\n\nProcess:\n1. Validates authentication via X-API-Key.\n2. Verifies user owns the specified gameId (and the key is valid for the game if scoped).\n3. Creates an analysis record in the database.\n4. Queues the analysis task to a background worker via Celery.\n5. Returns status 202 (Accepted) with the ID of the created analysis record.",
-        "tags": [
-          "Analysis"
-        ],
+        "tags": ["Analysis"],
         "security": [
           {
             "apiKeyAuth": []
@@ -356,11 +315,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "gameId",
-                  "contentType",
-                  "sourcePlayerId"
-                ]
+                "required": ["gameId", "contentType", "sourcePlayerId"]
               }
             },
             "multipart/form-data": {
@@ -421,11 +376,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "gameId",
-                  "contentType",
-                  "sourcePlayerId"
-                ]
+                "required": ["gameId", "contentType", "sourcePlayerId"]
               }
             },
             "text/plain": {
@@ -486,11 +437,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "gameId",
-                  "contentType",
-                  "sourcePlayerId"
-                ]
+                "required": ["gameId", "contentType", "sourcePlayerId"]
               }
             }
           }
@@ -511,11 +458,7 @@
         "operationId": "postApiV1ResultsAnalysis",
         "summary": "Webhook for Analysis Results",
         "description": "Internal webhook endpoint called by the analysis worker upon completion. Processes sentiment, toxicity, and feedback analysis results. Requires worker signature verification.",
-        "tags": [
-          "Webhooks",
-          "Results",
-          "Feedback"
-        ],
+        "tags": ["Webhooks", "Results", "Feedback"],
         "requestBody": {
           "required": true,
           "content": {
@@ -597,9 +540,7 @@
                             ]
                           }
                         },
-                        "required": [
-                          "processedAt"
-                        ]
+                        "required": ["processedAt"]
                       },
                       {
                         "type": "null"
@@ -662,9 +603,7 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "toxicityScore"
-                        ]
+                        "required": ["toxicityScore"]
                       },
                       {
                         "type": "null"
@@ -856,10 +795,7 @@
                                 }
                               }
                             },
-                            "required": [
-                              "isFeedback",
-                              "extractedFromSentiment"
-                            ]
+                            "required": ["isFeedback", "extractedFromSentiment"]
                           }
                         },
                         "required": [
@@ -877,10 +813,7 @@
                     ]
                   }
                 },
-                "required": [
-                  "sentimentDataId",
-                  "success"
-                ]
+                "required": ["sentimentDataId", "success"]
               }
             },
             "multipart/form-data": {
@@ -961,9 +894,7 @@
                             ]
                           }
                         },
-                        "required": [
-                          "processedAt"
-                        ]
+                        "required": ["processedAt"]
                       },
                       {
                         "type": "null"
@@ -1026,9 +957,7 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "toxicityScore"
-                        ]
+                        "required": ["toxicityScore"]
                       },
                       {
                         "type": "null"
@@ -1220,10 +1149,7 @@
                                 }
                               }
                             },
-                            "required": [
-                              "isFeedback",
-                              "extractedFromSentiment"
-                            ]
+                            "required": ["isFeedback", "extractedFromSentiment"]
                           }
                         },
                         "required": [
@@ -1241,10 +1167,7 @@
                     ]
                   }
                 },
-                "required": [
-                  "sentimentDataId",
-                  "success"
-                ]
+                "required": ["sentimentDataId", "success"]
               }
             },
             "text/plain": {
@@ -1325,9 +1248,7 @@
                             ]
                           }
                         },
-                        "required": [
-                          "processedAt"
-                        ]
+                        "required": ["processedAt"]
                       },
                       {
                         "type": "null"
@@ -1390,9 +1311,7 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "toxicityScore"
-                        ]
+                        "required": ["toxicityScore"]
                       },
                       {
                         "type": "null"
@@ -1584,10 +1503,7 @@
                                 }
                               }
                             },
-                            "required": [
-                              "isFeedback",
-                              "extractedFromSentiment"
-                            ]
+                            "required": ["isFeedback", "extractedFromSentiment"]
                           }
                         },
                         "required": [
@@ -1605,10 +1521,7 @@
                     ]
                   }
                 },
-                "required": [
-                  "sentimentDataId",
-                  "success"
-                ]
+                "required": ["sentimentDataId", "success"]
               }
             }
           }
@@ -1635,9 +1548,7 @@
         "operationId": "getApiV1ResultsById",
         "summary": "Retrieve Analysis Results by ID",
         "description": "Fetches the original sentiment data along with its processed sentiment and toxicity results. Requires authentication via X-API-Key header, and returns data only if the API key is valid and associated with the user who owns the record.",
-        "tags": [
-          "Results"
-        ],
+        "tags": ["Results"],
         "responses": {
           "200": {}
         }
@@ -1649,9 +1560,7 @@
         "operationId": "postApiV1Keys",
         "summary": "Create API Key",
         "description": "Creates a new API key associated with the authenticated user (via Bearer token) and a specific game. Returns the key details including the one-time visible secret key value.",
-        "tags": [
-          "API Keys"
-        ],
+        "tags": ["API Keys"],
         "requestBody": {
           "required": true,
           "content": {
@@ -1690,10 +1599,7 @@
                     ]
                   }
                 },
-                "required": [
-                  "gameId",
-                  "name"
-                ]
+                "required": ["gameId", "name"]
               }
             },
             "multipart/form-data": {
@@ -1731,10 +1637,7 @@
                     ]
                   }
                 },
-                "required": [
-                  "gameId",
-                  "name"
-                ]
+                "required": ["gameId", "name"]
               }
             },
             "text/plain": {
@@ -1772,10 +1675,7 @@
                     ]
                   }
                 },
-                "required": [
-                  "gameId",
-                  "name"
-                ]
+                "required": ["gameId", "name"]
               }
             }
           }
@@ -1788,9 +1688,7 @@
         "operationId": "getApiV1Keys",
         "summary": "List API Keys",
         "description": "Retrieves a list of all active API keys associated with the authenticated user (via Bearer token). The secret key value hash is excluded.",
-        "tags": [
-          "API Keys"
-        ],
+        "tags": ["API Keys"],
         "responses": {
           "200": {}
         }
@@ -1812,9 +1710,7 @@
         "operationId": "deleteApiV1KeysById",
         "summary": "Delete API Key",
         "description": "Soft-deletes an API key by its ID. Requires the authenticated user (via Bearer token) to own the key.",
-        "tags": [
-          "API Keys"
-        ],
+        "tags": ["API Keys"],
         "responses": {
           "200": {}
         }
@@ -1826,9 +1722,7 @@
         "operationId": "postApiV1Games",
         "summary": "Create Game",
         "description": "Creates a new game associated with the authenticated user (via Bearer token).",
-        "tags": [
-          "Games"
-        ],
+        "tags": ["Games"],
         "requestBody": {
           "required": true,
           "content": {
@@ -1849,9 +1743,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "name"
-                ]
+                "required": ["name"]
               }
             },
             "multipart/form-data": {
@@ -1871,9 +1763,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "name"
-                ]
+                "required": ["name"]
               }
             },
             "text/plain": {
@@ -1893,9 +1783,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "name"
-                ]
+                "required": ["name"]
               }
             }
           }
@@ -1908,9 +1796,7 @@
         "operationId": "getApiV1Games",
         "summary": "List User Games",
         "description": "Retrieves a list of all games associated with the authenticated user (via Bearer token).",
-        "tags": [
-          "Games"
-        ],
+        "tags": ["Games"],
         "responses": {
           "200": {}
         }
@@ -1932,9 +1818,7 @@
         "operationId": "getApiV1GamesById",
         "summary": "Get Game by ID",
         "description": "Retrieves details for a specific game owned by the authenticated user (via Bearer token).",
-        "tags": [
-          "Games"
-        ],
+        "tags": ["Games"],
         "responses": {
           "200": {}
         }
@@ -1954,9 +1838,7 @@
         "operationId": "deleteApiV1GamesById",
         "summary": "Delete Game",
         "description": "Deletes a game by its ID. Requires the authenticated user (via Bearer token) to own the game.",
-        "tags": [
-          "Games"
-        ],
+        "tags": ["Games"],
         "responses": {
           "200": {}
         }
@@ -1976,9 +1858,7 @@
         "operationId": "putApiV1GamesById",
         "summary": "Update Game",
         "description": "Updates details (name, description, gameType) for a specific game owned by the authenticated user (via Bearer token). Only provided fields are updated.",
-        "tags": [
-          "Games"
-        ],
+        "tags": ["Games"],
         "requestBody": {
           "required": true,
           "content": {
@@ -3226,9 +3106,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "multipart/form-data": {
@@ -3239,9 +3117,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "text/plain": {
@@ -3252,9 +3128,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3269,9 +3143,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "multipart/form-data": {
@@ -3282,9 +3154,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "text/plain": {
@@ -3295,9 +3165,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3312,9 +3180,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "multipart/form-data": {
@@ -3325,9 +3191,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "text/plain": {
@@ -3338,9 +3202,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3355,9 +3217,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "multipart/form-data": {
@@ -3368,9 +3228,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "text/plain": {
@@ -3381,9 +3239,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3391,9 +3247,7 @@
         },
         "operationId": "postApiV1GamesByIdServers",
         "summary": "Create Server",
-        "tags": [
-          "Servers"
-        ],
+        "tags": ["Servers"],
         "description": "Creates a new server (game or community) for a game. Server type is determined by the serverType field. Game servers can include region, community servers require platform.",
         "requestBody": {
           "required": true,
@@ -3540,10 +3394,7 @@
                     ]
                   }
                 },
-                "required": [
-                  "serverType",
-                  "name"
-                ]
+                "required": ["serverType", "name"]
               }
             },
             "multipart/form-data": {
@@ -3688,10 +3539,7 @@
                     ]
                   }
                 },
-                "required": [
-                  "serverType",
-                  "name"
-                ]
+                "required": ["serverType", "name"]
               }
             },
             "text/plain": {
@@ -3836,10 +3684,7 @@
                     ]
                   }
                 },
-                "required": [
-                  "serverType",
-                  "name"
-                ]
+                "required": ["serverType", "name"]
               }
             }
           }
@@ -4647,9 +4492,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "multipart/form-data": {
@@ -4660,9 +4503,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "text/plain": {
@@ -4673,9 +4514,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4690,9 +4529,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "multipart/form-data": {
@@ -4703,9 +4540,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "text/plain": {
@@ -4716,9 +4551,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4733,9 +4566,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "multipart/form-data": {
@@ -4746,9 +4577,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "text/plain": {
@@ -4759,9 +4588,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4776,9 +4603,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "multipart/form-data": {
@@ -4789,9 +4614,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "text/plain": {
@@ -4802,9 +4625,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4812,9 +4633,7 @@
         },
         "operationId": "getApiV1GamesByIdServers",
         "summary": "List Servers",
-        "tags": [
-          "Servers"
-        ],
+        "tags": ["Servers"],
         "description": "List all servers for a game. Optionally filter by serverType (GAME or COMMUNITY) using query parameter."
       }
     },
@@ -5986,9 +5805,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "multipart/form-data": {
@@ -5999,9 +5816,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "text/plain": {
@@ -6012,9 +5827,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -6029,9 +5842,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "multipart/form-data": {
@@ -6042,9 +5853,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "text/plain": {
@@ -6055,9 +5864,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -6072,9 +5879,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "multipart/form-data": {
@@ -6085,9 +5890,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "text/plain": {
@@ -6098,9 +5901,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -6115,9 +5916,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "multipart/form-data": {
@@ -6128,9 +5927,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "text/plain": {
@@ -6141,9 +5938,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -6151,9 +5946,7 @@
         },
         "operationId": "getApiV1GamesByIdServersByServerId",
         "summary": "Get Server by ID",
-        "tags": [
-          "Servers"
-        ],
+        "tags": ["Servers"],
         "description": "Retrieves a specific server (game or community) by its ID."
       },
       "put": {
@@ -7323,9 +7116,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "multipart/form-data": {
@@ -7336,9 +7127,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "text/plain": {
@@ -7349,9 +7138,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -7366,9 +7153,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "multipart/form-data": {
@@ -7379,9 +7164,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "text/plain": {
@@ -7392,9 +7175,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -7409,9 +7190,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "multipart/form-data": {
@@ -7422,9 +7201,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "text/plain": {
@@ -7435,9 +7212,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -7452,9 +7227,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "multipart/form-data": {
@@ -7465,9 +7238,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "text/plain": {
@@ -7478,9 +7249,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -7488,9 +7257,7 @@
         },
         "operationId": "putApiV1GamesByIdServersByServerId",
         "summary": "Update Server",
-        "tags": [
-          "Servers"
-        ],
+        "tags": ["Servers"],
         "description": "Updates a server (game or community) by its ID. Supports updating type-specific fields based on server type.",
         "requestBody": {
           "required": true,
@@ -7926,9 +7693,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "multipart/form-data": {
@@ -7939,9 +7704,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "text/plain": {
@@ -7952,9 +7715,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -7969,9 +7730,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "multipart/form-data": {
@@ -7982,9 +7741,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "text/plain": {
@@ -7995,9 +7752,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -8012,9 +7767,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "multipart/form-data": {
@@ -8025,9 +7778,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "text/plain": {
@@ -8038,9 +7789,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -8055,9 +7804,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "multipart/form-data": {
@@ -8068,9 +7815,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               },
               "text/plain": {
@@ -8081,9 +7826,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -8091,9 +7834,7 @@
         },
         "operationId": "deleteApiV1GamesByIdServersByServerId",
         "summary": "Delete Server",
-        "tags": [
-          "Servers"
-        ],
+        "tags": ["Servers"],
         "description": "Deletes a server (game or community) by its ID."
       }
     },
@@ -9055,10 +8796,7 @@
                                 ]
                               }
                             },
-                            "required": [
-                              "id",
-                              "email"
-                            ]
+                            "required": ["id", "email"]
                           },
                           "game": {
                             "type": "object",
@@ -9073,11 +8811,7 @@
                                 "type": "string"
                               }
                             },
-                            "required": [
-                              "id",
-                              "name",
-                              "gameType"
-                            ]
+                            "required": ["id", "name", "gameType"]
                           },
                           "server": {
                             "anyOf": [
@@ -9123,11 +8857,7 @@
                                     ]
                                   }
                                 },
-                                "required": [
-                                  "id",
-                                  "name",
-                                  "serverType"
-                                ]
+                                "required": ["id", "name", "serverType"]
                               },
                               {
                                 "type": "null"
@@ -9166,10 +8896,7 @@
                                     ]
                                   }
                                 },
-                                "required": [
-                                  "id",
-                                  "email"
-                                ]
+                                "required": ["id", "email"]
                               },
                               {
                                 "type": "null"
@@ -9208,10 +8935,7 @@
                                     ]
                                   }
                                 },
-                                "required": [
-                                  "id",
-                                  "email"
-                                ]
+                                "required": ["id", "email"]
                               },
                               {
                                 "type": "null"
@@ -9298,10 +9022,7 @@
                                       ]
                                     }
                                   },
-                                  "required": [
-                                    "id",
-                                    "email"
-                                  ]
+                                  "required": ["id", "email"]
                                 }
                               },
                               "required": [
@@ -9335,10 +9056,7 @@
                                   ]
                                 }
                               },
-                              "required": [
-                                "id",
-                                "name"
-                              ]
+                              "required": ["id", "name"]
                             }
                           },
                           "attachments": {
@@ -9518,10 +9236,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "feedback",
-                    "pagination"
-                  ]
+                  "required": ["feedback", "pagination"]
                 }
               },
               "multipart/form-data": {
@@ -9949,10 +9664,7 @@
                                 ]
                               }
                             },
-                            "required": [
-                              "id",
-                              "email"
-                            ]
+                            "required": ["id", "email"]
                           },
                           "game": {
                             "type": "object",
@@ -9967,11 +9679,7 @@
                                 "type": "string"
                               }
                             },
-                            "required": [
-                              "id",
-                              "name",
-                              "gameType"
-                            ]
+                            "required": ["id", "name", "gameType"]
                           },
                           "server": {
                             "anyOf": [
@@ -10017,11 +9725,7 @@
                                     ]
                                   }
                                 },
-                                "required": [
-                                  "id",
-                                  "name",
-                                  "serverType"
-                                ]
+                                "required": ["id", "name", "serverType"]
                               },
                               {
                                 "type": "null"
@@ -10060,10 +9764,7 @@
                                     ]
                                   }
                                 },
-                                "required": [
-                                  "id",
-                                  "email"
-                                ]
+                                "required": ["id", "email"]
                               },
                               {
                                 "type": "null"
@@ -10102,10 +9803,7 @@
                                     ]
                                   }
                                 },
-                                "required": [
-                                  "id",
-                                  "email"
-                                ]
+                                "required": ["id", "email"]
                               },
                               {
                                 "type": "null"
@@ -10192,10 +9890,7 @@
                                       ]
                                     }
                                   },
-                                  "required": [
-                                    "id",
-                                    "email"
-                                  ]
+                                  "required": ["id", "email"]
                                 }
                               },
                               "required": [
@@ -10229,10 +9924,7 @@
                                   ]
                                 }
                               },
-                              "required": [
-                                "id",
-                                "name"
-                              ]
+                              "required": ["id", "name"]
                             }
                           },
                           "attachments": {
@@ -10412,10 +10104,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "feedback",
-                    "pagination"
-                  ]
+                  "required": ["feedback", "pagination"]
                 }
               },
               "text/plain": {
@@ -10843,10 +10532,7 @@
                                 ]
                               }
                             },
-                            "required": [
-                              "id",
-                              "email"
-                            ]
+                            "required": ["id", "email"]
                           },
                           "game": {
                             "type": "object",
@@ -10861,11 +10547,7 @@
                                 "type": "string"
                               }
                             },
-                            "required": [
-                              "id",
-                              "name",
-                              "gameType"
-                            ]
+                            "required": ["id", "name", "gameType"]
                           },
                           "server": {
                             "anyOf": [
@@ -10911,11 +10593,7 @@
                                     ]
                                   }
                                 },
-                                "required": [
-                                  "id",
-                                  "name",
-                                  "serverType"
-                                ]
+                                "required": ["id", "name", "serverType"]
                               },
                               {
                                 "type": "null"
@@ -10954,10 +10632,7 @@
                                     ]
                                   }
                                 },
-                                "required": [
-                                  "id",
-                                  "email"
-                                ]
+                                "required": ["id", "email"]
                               },
                               {
                                 "type": "null"
@@ -10996,10 +10671,7 @@
                                     ]
                                   }
                                 },
-                                "required": [
-                                  "id",
-                                  "email"
-                                ]
+                                "required": ["id", "email"]
                               },
                               {
                                 "type": "null"
@@ -11086,10 +10758,7 @@
                                       ]
                                     }
                                   },
-                                  "required": [
-                                    "id",
-                                    "email"
-                                  ]
+                                  "required": ["id", "email"]
                                 }
                               },
                               "required": [
@@ -11123,10 +10792,7 @@
                                   ]
                                 }
                               },
-                              "required": [
-                                "id",
-                                "name"
-                              ]
+                              "required": ["id", "name"]
                             }
                           },
                           "attachments": {
@@ -11306,10 +10972,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "feedback",
-                    "pagination"
-                  ]
+                  "required": ["feedback", "pagination"]
                 }
               }
             }
@@ -11327,10 +10990,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error",
-                    "message"
-                  ]
+                  "required": ["error", "message"]
                 }
               },
               "multipart/form-data": {
@@ -11344,10 +11004,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error",
-                    "message"
-                  ]
+                  "required": ["error", "message"]
                 }
               },
               "text/plain": {
@@ -11361,10 +11018,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error",
-                    "message"
-                  ]
+                  "required": ["error", "message"]
                 }
               }
             }
@@ -11382,10 +11036,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error",
-                    "message"
-                  ]
+                  "required": ["error", "message"]
                 }
               },
               "multipart/form-data": {
@@ -11399,10 +11050,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error",
-                    "message"
-                  ]
+                  "required": ["error", "message"]
                 }
               },
               "text/plain": {
@@ -11416,10 +11064,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error",
-                    "message"
-                  ]
+                  "required": ["error", "message"]
                 }
               }
             }
@@ -11440,10 +11085,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error",
-                    "message"
-                  ]
+                  "required": ["error", "message"]
                 }
               },
               "multipart/form-data": {
@@ -11460,10 +11102,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error",
-                    "message"
-                  ]
+                  "required": ["error", "message"]
                 }
               },
               "text/plain": {
@@ -11480,19 +11119,14 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error",
-                    "message"
-                  ]
+                  "required": ["error", "message"]
                 }
               }
             }
           }
         },
         "operationId": "getApiV1Feedback",
-        "tags": [
-          "Feedback"
-        ],
+        "tags": ["Feedback"],
         "summary": "List feedback with filters",
         "description": "List and filter feedback across all games with pagination support"
       }
@@ -11933,10 +11567,7 @@
                           ]
                         }
                       },
-                      "required": [
-                        "id",
-                        "email"
-                      ]
+                      "required": ["id", "email"]
                     },
                     "game": {
                       "type": "object",
@@ -11951,11 +11582,7 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "id",
-                        "name",
-                        "gameType"
-                      ]
+                      "required": ["id", "name", "gameType"]
                     },
                     "server": {
                       "anyOf": [
@@ -12001,11 +11628,7 @@
                               ]
                             }
                           },
-                          "required": [
-                            "id",
-                            "name",
-                            "serverType"
-                          ]
+                          "required": ["id", "name", "serverType"]
                         },
                         {
                           "type": "null"
@@ -12044,10 +11667,7 @@
                               ]
                             }
                           },
-                          "required": [
-                            "id",
-                            "email"
-                          ]
+                          "required": ["id", "email"]
                         },
                         {
                           "type": "null"
@@ -12086,10 +11706,7 @@
                               ]
                             }
                           },
-                          "required": [
-                            "id",
-                            "email"
-                          ]
+                          "required": ["id", "email"]
                         },
                         {
                           "type": "null"
@@ -12176,10 +11793,7 @@
                                 ]
                               }
                             },
-                            "required": [
-                              "id",
-                              "email"
-                            ]
+                            "required": ["id", "email"]
                           }
                         },
                         "required": [
@@ -12213,10 +11827,7 @@
                             ]
                           }
                         },
-                        "required": [
-                          "id",
-                          "name"
-                        ]
+                        "required": ["id", "name"]
                       }
                     },
                     "attachments": {
@@ -12315,12 +11926,7 @@
                             ]
                           }
                         },
-                        "required": [
-                          "id",
-                          "userId",
-                          "voteType",
-                          "createdAt"
-                        ]
+                        "required": ["id", "userId", "voteType", "createdAt"]
                       }
                     }
                   },
@@ -12761,10 +12367,7 @@
                           ]
                         }
                       },
-                      "required": [
-                        "id",
-                        "email"
-                      ]
+                      "required": ["id", "email"]
                     },
                     "game": {
                       "type": "object",
@@ -12779,11 +12382,7 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "id",
-                        "name",
-                        "gameType"
-                      ]
+                      "required": ["id", "name", "gameType"]
                     },
                     "server": {
                       "anyOf": [
@@ -12829,11 +12428,7 @@
                               ]
                             }
                           },
-                          "required": [
-                            "id",
-                            "name",
-                            "serverType"
-                          ]
+                          "required": ["id", "name", "serverType"]
                         },
                         {
                           "type": "null"
@@ -12872,10 +12467,7 @@
                               ]
                             }
                           },
-                          "required": [
-                            "id",
-                            "email"
-                          ]
+                          "required": ["id", "email"]
                         },
                         {
                           "type": "null"
@@ -12914,10 +12506,7 @@
                               ]
                             }
                           },
-                          "required": [
-                            "id",
-                            "email"
-                          ]
+                          "required": ["id", "email"]
                         },
                         {
                           "type": "null"
@@ -13004,10 +12593,7 @@
                                 ]
                               }
                             },
-                            "required": [
-                              "id",
-                              "email"
-                            ]
+                            "required": ["id", "email"]
                           }
                         },
                         "required": [
@@ -13041,10 +12627,7 @@
                             ]
                           }
                         },
-                        "required": [
-                          "id",
-                          "name"
-                        ]
+                        "required": ["id", "name"]
                       }
                     },
                     "attachments": {
@@ -13143,12 +12726,7 @@
                             ]
                           }
                         },
-                        "required": [
-                          "id",
-                          "userId",
-                          "voteType",
-                          "createdAt"
-                        ]
+                        "required": ["id", "userId", "voteType", "createdAt"]
                       }
                     }
                   },
@@ -13589,10 +13167,7 @@
                           ]
                         }
                       },
-                      "required": [
-                        "id",
-                        "email"
-                      ]
+                      "required": ["id", "email"]
                     },
                     "game": {
                       "type": "object",
@@ -13607,11 +13182,7 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "id",
-                        "name",
-                        "gameType"
-                      ]
+                      "required": ["id", "name", "gameType"]
                     },
                     "server": {
                       "anyOf": [
@@ -13657,11 +13228,7 @@
                               ]
                             }
                           },
-                          "required": [
-                            "id",
-                            "name",
-                            "serverType"
-                          ]
+                          "required": ["id", "name", "serverType"]
                         },
                         {
                           "type": "null"
@@ -13700,10 +13267,7 @@
                               ]
                             }
                           },
-                          "required": [
-                            "id",
-                            "email"
-                          ]
+                          "required": ["id", "email"]
                         },
                         {
                           "type": "null"
@@ -13742,10 +13306,7 @@
                               ]
                             }
                           },
-                          "required": [
-                            "id",
-                            "email"
-                          ]
+                          "required": ["id", "email"]
                         },
                         {
                           "type": "null"
@@ -13832,10 +13393,7 @@
                                 ]
                               }
                             },
-                            "required": [
-                              "id",
-                              "email"
-                            ]
+                            "required": ["id", "email"]
                           }
                         },
                         "required": [
@@ -13869,10 +13427,7 @@
                             ]
                           }
                         },
-                        "required": [
-                          "id",
-                          "name"
-                        ]
+                        "required": ["id", "name"]
                       }
                     },
                     "attachments": {
@@ -13971,12 +13526,7 @@
                             ]
                           }
                         },
-                        "required": [
-                          "id",
-                          "userId",
-                          "voteType",
-                          "createdAt"
-                        ]
+                        "required": ["id", "userId", "voteType", "createdAt"]
                       }
                     }
                   },
@@ -14012,10 +13562,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error",
-                    "message"
-                  ]
+                  "required": ["error", "message"]
                 }
               },
               "multipart/form-data": {
@@ -14029,10 +13576,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error",
-                    "message"
-                  ]
+                  "required": ["error", "message"]
                 }
               },
               "text/plain": {
@@ -14046,10 +13590,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error",
-                    "message"
-                  ]
+                  "required": ["error", "message"]
                 }
               }
             }
@@ -14067,10 +13608,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error",
-                    "message"
-                  ]
+                  "required": ["error", "message"]
                 }
               },
               "multipart/form-data": {
@@ -14084,10 +13622,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error",
-                    "message"
-                  ]
+                  "required": ["error", "message"]
                 }
               },
               "text/plain": {
@@ -14101,10 +13636,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error",
-                    "message"
-                  ]
+                  "required": ["error", "message"]
                 }
               }
             }
@@ -14122,10 +13654,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error",
-                    "message"
-                  ]
+                  "required": ["error", "message"]
                 }
               },
               "multipart/form-data": {
@@ -14139,10 +13668,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error",
-                    "message"
-                  ]
+                  "required": ["error", "message"]
                 }
               },
               "text/plain": {
@@ -14156,10 +13682,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error",
-                    "message"
-                  ]
+                  "required": ["error", "message"]
                 }
               }
             }
@@ -14180,10 +13703,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error",
-                    "message"
-                  ]
+                  "required": ["error", "message"]
                 }
               },
               "multipart/form-data": {
@@ -14200,10 +13720,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error",
-                    "message"
-                  ]
+                  "required": ["error", "message"]
                 }
               },
               "text/plain": {
@@ -14220,19 +13737,14 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error",
-                    "message"
-                  ]
+                  "required": ["error", "message"]
                 }
               }
             }
           }
         },
         "operationId": "getApiV1FeedbackById",
-        "tags": [
-          "Feedback"
-        ],
+        "tags": ["Feedback"],
         "summary": "Get feedback by ID",
         "description": "Get detailed information about a specific feedback item"
       }

@@ -35,4 +35,4 @@
 
 - **Node.js Only:** Designed specifically for the Node.js runtime environment.
 - **API Key Auth Only (v1):** The initial version only supports `X-API-KEY` header authentication.
-- **Target Endpoints:** Focuses only on `/sentiment/text` and `/sentiment/audio`. 
+- **Target Endpoints:** Focuses only on `/sentiment/text` and `/sentiment/audio`.

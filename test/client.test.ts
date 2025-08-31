@@ -94,13 +94,17 @@ describe('CyberwareClient', () => {
         CyberwareBadRequestError,
       );
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await expect(client.analyzeText({ gameId: '1', contentType: 'text' } as any)).rejects.toThrow(
-        CyberwareBadRequestError,
-      );
+      await expect(
+        client.analyzeText({ gameId: '1', contentType: 'text' } as any),
+      ).rejects.toThrow(CyberwareBadRequestError);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await expect(client.analyzeText({ gameId: '1', contentType: 'text', rawContent: 'test' } as any)).rejects.toThrow(
-        CyberwareBadRequestError,
-      );
+      await expect(
+        client.analyzeText({
+          gameId: '1',
+          contentType: 'text',
+          rawContent: 'test',
+        } as any),
+      ).rejects.toThrow(CyberwareBadRequestError);
     });
 
     it('should make a POST request to /analyze with correct data and headers', async () => {
@@ -115,7 +119,7 @@ describe('CyberwareClient', () => {
         message: 'Analysis task accepted',
         analysisId: 'text-uuid-123',
       };
-      
+
       const scope = nock(LOCAL_TEST_URL) // Use localhost URL
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .post(ANALYZE_PATH, expectedApiRequest as any)
@@ -133,7 +137,7 @@ describe('CyberwareClient', () => {
         message: 'Analysis task accepted',
         analysisId: 'text-uuid-123',
       };
-      
+
       nock(LOCAL_TEST_URL) // Use localhost URL
         .post(ANALYZE_PATH)
         .reply(202, apiResponse);
@@ -175,7 +179,11 @@ describe('CyberwareClient', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await expect(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        client.analyzeAudio({ gameId: '1', contentType: 'audio', rawContent: 'abc' } as any),
+        client.analyzeAudio({
+          gameId: '1',
+          contentType: 'audio',
+          rawContent: 'abc',
+        } as any),
       ).rejects.toThrow(CyberwareBadRequestError);
     });
 
@@ -191,7 +199,7 @@ describe('CyberwareClient', () => {
         message: 'Audio analysis task accepted',
         analysisId: 'audio-uuid-456',
       };
-      
+
       const scope = nock(LOCAL_TEST_URL) // Use localhost URL
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .post(ANALYZE_PATH, expectedApiRequest as any)
@@ -209,7 +217,7 @@ describe('CyberwareClient', () => {
         message: 'Audio analysis task accepted',
         analysisId: 'audio-uuid-456',
       };
-      
+
       nock(LOCAL_TEST_URL) // Use localhost URL
         .post(ANALYZE_PATH)
         .reply(202, apiResponse);
@@ -357,7 +365,7 @@ describe('CyberwareClient', () => {
         message: 'Task accepted after retry',
         analysisId: 'retry-uuid-789',
       };
-      // Expected result 
+      // Expected result
       const mockRetrySuccessResponse: AnalysisTaskResponse = {
         message: 'Task accepted after retry',
         analysisId: 'retry-uuid-789',

@@ -9,9 +9,9 @@ The SDK is a Node.js library designed to simplify interaction with the Cyberware
 - **`CyberwareClient`:** The main entry point class. Handles configuration (timeout, debug, retries), API key management, and exposes methods for API endpoints.
 - **`axios` Instance:** A private instance of `axios` configured with the hardcoded production base URL, timeout, and authentication headers.
 - **Interceptors:** Axios interceptors for:
-    - Logging requests/responses (debug mode).
-    - Transforming successful responses (extracting data).
-    - Handling errors (mapping HTTP status codes to custom errors).
+  - Logging requests/responses (debug mode).
+  - Transforming successful responses (extracting data).
+  - Handling errors (mapping HTTP status codes to custom errors).
 - **`axios-retry`:** Integrated with the `axios` instance to handle transient network errors and specific status codes (e.g., 429, 5xx).
 - **Custom Error Classes:** Specific error types (`CyberwareAuthenticationError`, `CyberwareBadRequestError`, etc.) extending a base `CyberwareApiError`.
 - **Type Definitions:** TypeScript interfaces for request parameters, client options, and response objects.
@@ -34,4 +34,4 @@ The SDK is a Node.js library designed to simplify interaction with the Cyberware
 ## 4. Dependencies
 
 - `axios`: HTTP client.
-- `axios-retry`: Request retry logic. 
+- `axios-retry`: Request retry logic.

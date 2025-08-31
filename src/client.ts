@@ -5,6 +5,7 @@ import {
   TextAnalysisRequest,
   AudioAnalysisRequest,
   AnalysisTaskResponse,
+  AnalysisResult,
   ApiErrorResponse,
 } from './types';
 import {
@@ -250,9 +251,10 @@ export class CyberwareClient {
       );
     }
 
-    // Add SDK metadata automatically
+    // Add SDK metadata and contentType automatically
     const requestWithMetadata = {
       ...request,
+      contentType: 'text' as const,
       sdkName: SDK_NAME,
       sdkVersion: SDK_VERSION,
     };
@@ -293,9 +295,10 @@ export class CyberwareClient {
       );
     }
 
-    // Add SDK metadata automatically
+    // Add SDK metadata and contentType automatically
     const requestWithMetadata = {
       ...request,
+      contentType: 'audio' as const,
       sdkName: SDK_NAME,
       sdkVersion: SDK_VERSION,
     };
@@ -306,6 +309,38 @@ export class CyberwareClient {
     return this.client.post<AnalysisTaskResponse>(
       '/analyze',
       requestWithMetadata,
+    );
+  }
+
+  /**
+   * Retrieves analysis results by ID.
+   * Corresponds to GET /api/v1/results/{id}
+   *
+   * @param analysisId The unique ID of the analysis result to retrieve.
+   * @returns A promise resolving to an `AnalysisResult` containing the analysis data and results.
+   * @throws {CyberwareBadRequestError} If the request is invalid (400).
+   * @throws {CyberwareAuthenticationError} If the API key is invalid (401).
+   * @throws {CyberwareNotFoundError} If the analysis result is not found (404).
+   * @throws {CyberwareRateLimitError} If the rate limit is exceeded (429).
+   * @throws {CyberwareServerError} If there is a server error (5xx).
+   * @throws {CyberwareApiError} For other unexpected errors.
+   */
+  async getAnalysisResult(analysisId: string): Promise<AnalysisResult> {
+    if (
+      !analysisId ||
+      typeof analysisId !== 'string' ||
+      analysisId.trim().length === 0
+    ) {
+      throw new CyberwareBadRequestError(
+        'Analysis ID is required and must be a non-empty string.',
+      );
+    }
+
+    // The interceptor handles extracting the data or throwing the correct error
+    // API returns 200 OK with AnalysisResult
+    // @ts-expect-error Linter incorrectly flags return type due to interceptor complexity
+    return this.client.get<AnalysisResult>(
+      `/results/${encodeURIComponent(analysisId.trim())}`,
     );
   }
 }

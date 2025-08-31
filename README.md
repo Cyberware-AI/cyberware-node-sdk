@@ -45,7 +45,7 @@ if (!apiKey) {
 // Initialize the client (options are optional)
 const client = new CyberwareClient(apiKey, {
   timeout: 10000, // default
-  debug: false,   // default
+  debug: false, // default
   // retryConfig: { retries: 3, retryDelay: (count, err) => ... } // optional
 });
 
@@ -56,7 +56,8 @@ const textRequest: TextAnalysisRequest = {
   serverId: 'optional-server-id',
 };
 
-client.analyzeText(textRequest)
+client
+  .analyzeText(textRequest)
   .then((result: AnalysisTaskResponse) => {
     console.log('Text task accepted:', result);
     // result.message, result.sentimentDataId
@@ -72,7 +73,8 @@ const audioRequest: AudioAnalysisRequest = {
   serverId: 'optional-server-id',
 };
 
-client.analyzeAudio(audioRequest)
+client
+  .analyzeAudio(audioRequest)
   .then((result: AnalysisTaskResponse) => {
     console.log('Audio task accepted:', result);
   })
@@ -80,12 +82,16 @@ client.analyzeAudio(audioRequest)
 
 function handleError(error: unknown) {
   if (error instanceof CyberwareAuthenticationError) {
-    console.error(`Authentication Failed (Status: ${error.status}): ${error.message}`);
+    console.error(
+      `Authentication Failed (Status: ${error.status}): ${error.message}`,
+    );
   } else if (error instanceof CyberwareBadRequestError) {
     console.error(`Bad Request (Status: ${error.status}): ${error.message}`);
     console.error('API Response:', error.responseData);
   } else if (error instanceof CyberwareApiError) {
-    console.error(`API Error (Status: ${error.status ?? 'N/A'}): ${error.message}`);
+    console.error(
+      `API Error (Status: ${error.status ?? 'N/A'}): ${error.message}`,
+    );
     if (error.responseData) console.error('API Response:', error.responseData);
   } else {
     console.error('Unexpected error:', error);
@@ -100,7 +106,7 @@ The `CyberwareClient` constructor accepts an optional second argument:
 ```typescript
 export interface CyberwareClientOptions {
   timeout?: number; // default: 10000 (10s)
-  debug?: boolean;  // default: false
+  debug?: boolean; // default: false
   retryConfig?: {
     retries?: number; // default: 3
     retryDelay?: (retryCount: number, error: Error) => number; // default: exponential backoff
@@ -116,6 +122,7 @@ export interface CyberwareClientOptions {
 ## API
 
 - **`analyzeText(request: TextAnalysisRequest): Promise<AnalysisTaskResponse>`**
+
   - POST `/sentiment/text`
   - Validates `gameId` and `text` locally; throws `CyberwareBadRequestError` if missing
   - Typically returns HTTP 202 with `{ message, sentimentDataId }`
@@ -158,6 +165,7 @@ The SDK throws specific error classes extending `CyberwareApiError`:
 - `CyberwareApiError` (generic/unexpected)
 
 Each error instance includes:
+
 - `message: string`
 - `status?: number`
 - `responseData?: unknown`
@@ -170,6 +178,7 @@ Each error instance includes:
 ## Examples
 
 See the `examples/` directory for runnable scripts:
+
 - `examples/basic_usage.ts`
 - `examples/discord_listener.ts`
 - `examples/telegram_listener.ts`
@@ -182,4 +191,4 @@ Run with environment variables set (e.g., `CYBERWARE_API_KEY`).
 
 ## License
 
-This SDK is licensed under the Apache License, Version 2.0. A `LICENSE` file will be added. 
+This SDK is licensed under the Apache License, Version 2.0. A `LICENSE` file will be added.

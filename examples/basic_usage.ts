@@ -50,7 +50,7 @@ async function runExamples() {
   try {
     const textRequest: TextAnalysisRequest = {
       gameId: gameId,
-      contentType: 'text',
+      // contentType is now automatically set by the SDK
       rawContent: 'This interaction was really positive and helpful!',
       sourcePlayerId: sourcePlayerId,
       serverId: serverId,
@@ -73,7 +73,7 @@ async function runExamples() {
 
     const audioRequest: AudioAnalysisRequest = {
       gameId: gameId,
-      contentType: 'audio',
+      // contentType is now automatically set by the SDK
       rawContent: audioBase64,
       sourcePlayerId: sourcePlayerId,
       serverId: serverId,
@@ -93,7 +93,7 @@ async function runExamples() {
   try {
     const badTextRequest: TextAnalysisRequest = {
       gameId: gameId,
-      contentType: 'text',
+      // contentType is now automatically set by the SDK
       // Missing 'rawContent' and 'sourcePlayerId' fields intentionally
     } as TextAnalysisRequest;
     console.log('Submitting bad text request:', badTextRequest);

@@ -78,9 +78,9 @@ export interface BaseAnalysisRequest {
 export interface TextAnalysisRequest extends BaseAnalysisRequest {
   /**
    * Content type identifier.
-   * @required
+   * @optional - Will be automatically set to 'text' by the SDK
    */
-  contentType: 'text';
+  contentType?: 'text';
   /**
    * The actual text content to analyze.
    * @required
@@ -95,9 +95,9 @@ export interface TextAnalysisRequest extends BaseAnalysisRequest {
 export interface AudioAnalysisRequest extends BaseAnalysisRequest {
   /**
    * Content type identifier.
-   * @required
+   * @optional - Will be automatically set to 'audio' by the SDK
    */
-  contentType: 'audio';
+  contentType?: 'audio';
   /**
    * The base64 encoded audio data to analyze.
    * @required
@@ -123,4 +123,119 @@ export interface AnalysisTaskResponse {
 export interface ApiErrorResponse {
   /** The error message string provided by the API. */
   error: string;
+}
+
+/**
+ * Sentiment analysis result data.
+ */
+export interface SentimentResult {
+  /** Numerical sentiment score. */
+  sentimentScore?: number | null;
+  /** Dominant emotion identifier. */
+  dominantEmotionId?: string | null;
+  /** Confidence level of the analysis. */
+  confidence?: number | null;
+  /** Human-readable explanation of the analysis. */
+  explanation?: string | null;
+  /** Timestamp when the analysis was processed. */
+  processedAt: string | Date | number;
+}
+
+/**
+ * Toxicity analysis result data.
+ */
+export interface ToxicityResult {
+  /** Numerical toxicity score. */
+  toxicityScore: number;
+  /** Reason for the toxicity classification. */
+  reason?: string | null;
+  /** Communication channel identifier. */
+  channel?: string | null;
+  /** Timestamp of the analysis. */
+  timestamp?: string | Date | number;
+  /** Server ID where the content originated. */
+  serverId?: string;
+  /** Source type of the content. */
+  sourceType?: string;
+  /** ID of the player who generated the content. */
+  sourcePlayerId?: string;
+}
+
+/**
+ * Feedback type constants.
+ */
+export type FeedbackType =
+  | 'BUG_REPORT'
+  | 'FEATURE_REQUEST'
+  | 'SUGGESTION'
+  | 'COMPLAINT'
+  | 'PRAISE'
+  | 'QUESTION'
+  | 'IMPROVEMENT'
+  | 'OTHER';
+
+/**
+ * Feedback category constants.
+ */
+export type FeedbackCategory =
+  | 'GAMEPLAY'
+  | 'UI_UX'
+  | 'PERFORMANCE'
+  | 'CONTENT'
+  | 'SOCIAL'
+  | 'TECHNICAL'
+  | 'MONETIZATION'
+  | 'ACCESSIBILITY'
+  | 'OTHER';
+
+/**
+ * Feedback analysis result data.
+ */
+export interface FeedbackResult {
+  /** Type classification of the feedback. */
+  type?: FeedbackType;
+  /** Category classification of the feedback. */
+  category?: FeedbackCategory;
+  /** Priority level of the feedback. */
+  priority?: string | null;
+  /** Summary of the feedback content. */
+  summary?: string | null;
+  /** Suggested action based on the feedback. */
+  suggestedAction?: string | null;
+  /** Timestamp when the feedback was processed. */
+  processedAt?: string | Date | number;
+}
+
+/**
+ * Complete analysis result response from GET /api/v1/results/{id}.
+ */
+export interface AnalysisResult {
+  /** Unique identifier for the analysis. */
+  id: string;
+  /** Game ID associated with the analysis. */
+  gameId: string;
+  /** Original content that was analyzed. */
+  rawContent: string;
+  /** Content type of the analyzed data. */
+  contentType: 'text' | 'audio';
+  /** ID of the player who generated the content. */
+  sourcePlayerId: string;
+  /** Server ID where the content originated. */
+  serverId?: string;
+  /** Source type of the content. */
+  sourceType?: string;
+  /** Timestamp when the analysis was created. */
+  createdAt: string | Date | number;
+  /** Timestamp when the analysis was last updated. */
+  updatedAt?: string | Date | number;
+  /** Analysis status. */
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  /** Sentiment analysis results. */
+  sentimentResult?: SentimentResult | null;
+  /** Toxicity analysis results. */
+  toxicityResult?: ToxicityResult | null;
+  /** Feedback analysis results. */
+  feedbackResult?: FeedbackResult | null;
+  /** Error message if analysis failed. */
+  errorMessage?: string;
 }
