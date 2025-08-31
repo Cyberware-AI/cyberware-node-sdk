@@ -19,3 +19,10 @@
 **Reason:** GitHub push protection blocked push due to detected npm access token in `.npmrc`.
 ---
 
+---
+**Date:** 2025-08-31 00:00
+**File(s):** `src/client.ts`
+**Summary:** Read SDK `name` and `version` from `package.json` using TypeScript `resolveJsonModule`; replaced hardcoded constants used for SDK metadata in requests.
+**Reason:** Keep SDK metadata in sync with published package without manual updates.
+---
+

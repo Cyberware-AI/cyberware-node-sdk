@@ -15,6 +15,7 @@ import {
   CyberwareServerError,
   CyberwareRateLimitError,
 } from './errors';
+import packageJson from '../package.json';
 
 // Use the actual production URL (ensure it's correct)
 const PRODUCTION_BASE_URL = 'http://localhost:8080/api/v1'; //'https://api.cyberware.ai/api/v1';
@@ -23,7 +24,7 @@ const DEFAULT_RETRIES = 3;
 
 // SDK metadata that will be automatically included in requests
 const SDK_NAME = '@cyberwareai/node-sdk';
-const SDK_VERSION = '0.1.3';
+const SDK_VERSION = packageJson.version;
 
 /**
  * Represents the main client for interacting with the Cyberware API.
