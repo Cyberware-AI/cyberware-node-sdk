@@ -41,6 +41,7 @@ console.log('Cyberware Client Initialized.');
 
 const gameId = 'your-actual-game-id'; // Replace with a valid Game ID
 const serverId = 'server-123'; // Optional server ID
+const sourcePlayerId = 'player-456'; // Required: ID of the player who generated the content
 
 // --- Main Function ---
 
@@ -48,16 +49,18 @@ async function runExamples() {
   console.log('\n--- Running Text Analysis Example ---');
   try {
     const textRequest: TextAnalysisRequest = {
-      game_id: gameId,
-      text: 'This interaction was really positive and helpful!',
-      server_id: serverId,
+      gameId: gameId,
+      contentType: 'text',
+      rawContent: 'This interaction was really positive and helpful!',
+      sourcePlayerId: sourcePlayerId,
+      serverId: serverId,
     };
     console.log('Submitting text analysis request:', textRequest);
     const textResponse: AnalysisTaskResponse =
       await client.analyzeText(textRequest);
     console.log('Text Analysis Task Accepted:');
     console.log(`  Message: ${textResponse.message}`);
-    console.log(`  Sentiment Data ID: ${textResponse.sentiment_data_id}`);
+    console.log(`  Analysis ID: ${textResponse.analysisId}`);
   } catch (error) {
     handleApiError('Text Analysis', error);
   }
@@ -69,16 +72,18 @@ async function runExamples() {
     const audioBase64 = Buffer.from(dummyAudioContent).toString('base64');
 
     const audioRequest: AudioAnalysisRequest = {
-      game_id: gameId,
-      audio_base64: audioBase64,
-      server_id: serverId,
+      gameId: gameId,
+      contentType: 'audio',
+      rawContent: audioBase64,
+      sourcePlayerId: sourcePlayerId,
+      serverId: serverId,
     };
     console.log('Submitting audio analysis request (with dummy data):');
     const audioResponse: AnalysisTaskResponse =
       await client.analyzeAudio(audioRequest);
     console.log('Audio Analysis Task Accepted:');
     console.log(`  Message: ${audioResponse.message}`);
-    console.log(`  Sentiment Data ID: ${audioResponse.sentiment_data_id}`);
+    console.log(`  Analysis ID: ${audioResponse.analysisId}`);
   } catch (error) {
     handleApiError('Audio Analysis', error);
   }
@@ -87,8 +92,9 @@ async function runExamples() {
   console.log('\n--- Running Bad Request Example ---');
   try {
     const badTextRequest: TextAnalysisRequest = {
-      game_id: gameId,
-      // Missing 'text' field intentionally
+      gameId: gameId,
+      contentType: 'text',
+      // Missing 'rawContent' and 'sourcePlayerId' fields intentionally
     } as TextAnalysisRequest;
     console.log('Submitting bad text request:', badTextRequest);
     await client.analyzeText(badTextRequest);

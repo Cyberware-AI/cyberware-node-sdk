@@ -30,58 +30,90 @@ export interface CyberwareClientOptions {
 }
 
 /**
- * Request body for analyzing text.
- * Based on Swagger definition: `github_com_cyberware_cyberware-backend_internal_models.TextAnalysisRequest`
+ * Base interface for analysis requests.
+ * Based on the unified /api/v1/analyze endpoint schema.
  */
-export interface TextAnalysisRequest {
+export interface BaseAnalysisRequest {
   /**
-   * The ID of the game associated with the text.
+   * The ID of the game associated with the content.
    * @required
    */
-  game_id: string;
+  gameId: string;
   /**
-   * The text content to analyze.
+   * ID of the player who generated the content.
    * @required
    */
-  text: string;
+  sourcePlayerId: string;
   /**
-   * Optional server ID where the text originated.
+   * Optional server ID where the content originated.
    * @optional
    */
-  server_id?: string;
+  serverId?: string;
+  /**
+   * URL to fetch event log data from (alternative to rawContent).
+   * @optional
+   */
+  eventLogUrl?: string;
+  /**
+   * Type of source that generated the content.
+   * @optional
+   */
+  sourceType?: string;
+  /**
+   * URL to custom ruleset for analysis.
+   * @optional
+   */
+  rulesetUrl?: string;
+  /**
+   * Webhook URL for result notifications.
+   * @optional
+   */
+  webhookUrl?: string;
 }
 
 /**
- * Request body for analyzing audio.
- * Based on Swagger definition: `github_com_cyberware_cyberware-backend_internal_models.AudioAnalysisRequest`
+ * Request body for analyzing text content.
+ * Based on the unified /api/v1/analyze endpoint schema.
  */
-export interface AudioAnalysisRequest {
+export interface TextAnalysisRequest extends BaseAnalysisRequest {
   /**
-   * The ID of the game associated with the audio.
+   * Content type identifier.
    * @required
    */
-  game_id: string;
+  contentType: 'text';
   /**
-   * The base64 encoded audio data.
+   * The actual text content to analyze.
    * @required
    */
-  audio_base64: string;
+  rawContent: string;
+}
+
+/**
+ * Request body for analyzing audio content.
+ * Based on the unified /api/v1/analyze endpoint schema.
+ */
+export interface AudioAnalysisRequest extends BaseAnalysisRequest {
   /**
-   * Optional server ID where the audio originated.
-   * @optional
+   * Content type identifier.
+   * @required
    */
-  server_id?: string;
+  contentType: 'audio';
+  /**
+   * The base64 encoded audio data to analyze.
+   * @required
+   */
+  rawContent: string;
 }
 
 /**
  * Response received when an analysis task is successfully submitted (HTTP 202).
- * Based on Swagger definition: `github_com_cyberware_cyberware-backend_internal_models.AnalysisTaskResponse`
+ * Based on the actual API response from /api/v1/analyze endpoint.
  */
 export interface AnalysisTaskResponse {
   /** Confirmation message. */
   message: string;
   /** The unique ID assigned to the submitted data for later result retrieval. */
-  sentiment_data_id: string;
+  analysisId: string;
 }
 
 /**

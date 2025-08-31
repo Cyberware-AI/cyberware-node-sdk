@@ -51,15 +51,15 @@ const client = new CyberwareClient(apiKey, {
 
 // --- Analyze Text ---
 const textRequest: TextAnalysisRequest = {
-  game_id: 'your-game-id',
+  gameId: 'your-game-id',
   text: 'This game is amazing!',
-  server_id: 'optional-server-id',
+  serverId: 'optional-server-id',
 };
 
 client.analyzeText(textRequest)
   .then((result: AnalysisTaskResponse) => {
     console.log('Text task accepted:', result);
-    // result.message, result.sentiment_data_id
+    // result.message, result.sentimentDataId
   })
   .catch((error) => handleError(error));
 
@@ -67,9 +67,9 @@ client.analyzeText(textRequest)
 const audioBase64Data = '...your base64 encoded audio...';
 
 const audioRequest: AudioAnalysisRequest = {
-  game_id: 'your-game-id',
-  audio_base64: audioBase64Data,
-  server_id: 'optional-server-id',
+  gameId: 'your-game-id',
+  audioBase64: audioBase64Data,
+  serverId: 'optional-server-id',
 };
 
 client.analyzeAudio(audioRequest)
@@ -117,32 +117,32 @@ export interface CyberwareClientOptions {
 
 - **`analyzeText(request: TextAnalysisRequest): Promise<AnalysisTaskResponse>`**
   - POST `/sentiment/text`
-  - Validates `game_id` and `text` locally; throws `CyberwareBadRequestError` if missing
-  - Typically returns HTTP 202 with `{ message, sentiment_data_id }`
+  - Validates `gameId` and `text` locally; throws `CyberwareBadRequestError` if missing
+  - Typically returns HTTP 202 with `{ message, sentimentDataId }`
 
 - **`analyzeAudio(request: AudioAnalysisRequest): Promise<AnalysisTaskResponse>`**
   - POST `/sentiment/audio`
-  - Validates `game_id` and `audio_base64` locally; throws `CyberwareBadRequestError` if missing
-  - Typically returns HTTP 202 with `{ message, sentiment_data_id }`
+  - Validates `gameId` and `audioBase64` locally; throws `CyberwareBadRequestError` if missing
+  - Typically returns HTTP 202 with `{ message, sentimentDataId }`
 
 ### Types
 
 ```typescript
 interface TextAnalysisRequest {
-  game_id: string;
+  gameId: string;
   text: string;
-  server_id?: string;
+  serverId?: string;
 }
 
 interface AudioAnalysisRequest {
-  game_id: string;
-  audio_base64: string;
-  server_id?: string;
+  gameId: string;
+  audioBase64: string;
+  serverId?: string;
 }
 
 interface AnalysisTaskResponse {
   message: string;
-  sentiment_data_id: string;
+  sentimentDataId: string;
 }
 ```
 

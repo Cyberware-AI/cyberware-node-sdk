@@ -21,6 +21,10 @@ const PRODUCTION_BASE_URL = 'http://localhost:8080/api/v1'; //'https://api.cyber
 const DEFAULT_TIMEOUT = 10000; // 10 seconds
 const DEFAULT_RETRIES = 3;
 
+// SDK metadata that will be automatically included in requests
+const SDK_NAME = '@cyberwareai/node-sdk';
+const SDK_VERSION = '0.1.3';
+
 /**
  * Represents the main client for interacting with the Cyberware API.
  */
@@ -102,6 +106,29 @@ export class CyberwareClient {
   }
 
   /**
+   * Transforms snake_case API response properties to camelCase for SDK consistency.
+   * @param data The API response data to transform.
+   * @returns The transformed data with camelCase properties.
+   * @private
+   */
+  private transformApiResponse(data: any): any {
+    if (!data || typeof data !== 'object') {
+      return data;
+    }
+    
+    const transformed = { ...data };
+    
+    // Transform specific known snake_case properties
+    // Note: The API now returns analysisId directly, but keeping this for backwards compatibility
+    if ('sentiment_data_id' in transformed) {
+      transformed.analysisId = transformed.sentiment_data_id;
+      delete transformed.sentiment_data_id;
+    }
+    
+    return transformed;
+  }
+
+  /**
    * Sets up the request and response interceptors for the Axios instance.
    *
    * @param debug Whether to enable debug logging for requests and errors.
@@ -127,10 +154,10 @@ export class CyberwareClient {
 
     // Response Interceptor
     this.client.interceptors.response.use(
-      // On success, just return the data
+      // On success, transform response data and return it
       (response: AxiosResponse) => {
         // REMOVED the specific debug log here
-        return response.data;
+        return this.transformApiResponse(response.data);
       },
       // On error, wrap it in a custom error class
       (error: AxiosError<ApiErrorResponse>) => {
@@ -187,7 +214,7 @@ export class CyberwareClient {
 
   /**
    * Submits text for asynchronous sentiment analysis.
-   * Corresponds to POST /sentiment/text
+   * Corresponds to POST /api/v1/analyze
    *
    * @param request The text analysis request details.
    * @returns A promise resolving to an `AnalysisTaskResponse` containing the ID for the submitted data.
@@ -201,20 +228,28 @@ export class CyberwareClient {
   async analyzeText(
     request: TextAnalysisRequest,
   ): Promise<AnalysisTaskResponse> {
-    if (!request || !request.game_id || !request.text) {
+    if (!request || !request.gameId || !request.rawContent || !request.sourcePlayerId) {
       throw new CyberwareBadRequestError(
-        'Missing required fields: game_id and text are required for text analysis.',
+        'Missing required fields: gameId, rawContent, and sourcePlayerId are required for text analysis.',
       );
     }
+    
+    // Add SDK metadata automatically
+    const requestWithMetadata = {
+      ...request,
+      sdkName: SDK_NAME,
+      sdkVersion: SDK_VERSION,
+    };
+    
     // The interceptor handles extracting the data or throwing the correct error
     // API returns 202 Accepted with AnalysisTaskResponse
     // @ts-expect-error Linter incorrectly flags return type due to interceptor complexity
-    return this.client.post<AnalysisTaskResponse>('/sentiment/text', request);
+    return this.client.post<AnalysisTaskResponse>('/analyze', requestWithMetadata);
   }
 
   /**
    * Submits audio (base64 encoded) for asynchronous sentiment analysis.
-   * Corresponds to POST /sentiment/audio
+   * Corresponds to POST /api/v1/analyze
    *
    * @param request The audio analysis request details.
    * @returns A promise resolving to an `AnalysisTaskResponse` containing the ID for the submitted data.
@@ -228,14 +263,22 @@ export class CyberwareClient {
   async analyzeAudio(
     request: AudioAnalysisRequest,
   ): Promise<AnalysisTaskResponse> {
-    if (!request || !request.game_id || !request.audio_base64) {
+    if (!request || !request.gameId || !request.rawContent || !request.sourcePlayerId) {
       throw new CyberwareBadRequestError(
-        'Missing required fields: game_id and audio_base64 are required for audio analysis.',
+        'Missing required fields: gameId, rawContent, and sourcePlayerId are required for audio analysis.',
       );
     }
+    
+    // Add SDK metadata automatically
+    const requestWithMetadata = {
+      ...request,
+      sdkName: SDK_NAME,
+      sdkVersion: SDK_VERSION,
+    };
+    
     // The interceptor handles extracting the data or throwing the correct error
     // API returns 202 Accepted with AnalysisTaskResponse
     // @ts-expect-error Linter incorrectly flags return type due to interceptor complexity
-    return this.client.post<AnalysisTaskResponse>('/sentiment/audio', request);
+    return this.client.post<AnalysisTaskResponse>('/analyze', requestWithMetadata);
   }
 }

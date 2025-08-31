@@ -43,9 +43,9 @@ bot.on('message', (msg) => {
   /*
   try {
     // Initialize cyberwareClient earlier in the script
-    const analysisRequest = { game_id: 'your-telegram-game-id', text: text };
+    const analysisRequest = { gameId: 'your-telegram-game-id', text: text };
     const task = await cyberwareClient.analyzeText(analysisRequest);
-    console.log(` -> Sent to Cyberware for analysis (Task ID: ${task.sentiment_data_id})`);
+    console.log(` -> Sent to Cyberware for analysis (Task ID: ${task.sentimentDataId})`);
   } catch (error) {
     console.error(' -> Failed to send message to Cyberware:', error);
   }

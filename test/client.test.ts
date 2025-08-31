@@ -15,8 +15,7 @@ import {
 // Define the production base URL consistently with src/client.ts
 const LOCAL_TEST_URL = 'http://localhost:8080/api/v1'; // Use localhost for testing as requested
 const TEST_API_KEY = 'test-api-key';
-const SENTIMENT_TEXT_PATH = '/sentiment/text';
-const SENTIMENT_AUDIO_PATH = '/sentiment/audio';
+const ANALYZE_PATH = '/analyze';
 
 describe('CyberwareClient', () => {
   let client: CyberwareClient;
@@ -71,13 +70,15 @@ describe('CyberwareClient', () => {
   // --- analyzeText Tests ---
   describe('analyzeText', () => {
     const validRequest: TextAnalysisRequest = {
-      game_id: 'game-123',
-      text: 'This is a test.',
+      gameId: 'game-123',
+      contentType: 'text',
+      rawContent: 'This is a test.',
+      sourcePlayerId: 'player-456',
     };
     // Define the expected 202 response based on AnalysisTaskResponse
     const mockAcceptedResponse: AnalysisTaskResponse = {
       message: 'Analysis task accepted',
-      sentiment_data_id: 'text-uuid-123',
+      analysisId: 'text-uuid-123',
     };
 
     it('should throw BadRequestError if request is invalid', async () => {
@@ -86,31 +87,53 @@ describe('CyberwareClient', () => {
         CyberwareBadRequestError,
       );
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await expect(client.analyzeText({ game_id: '1' } as any)).rejects.toThrow(
+      await expect(client.analyzeText({ gameId: '1' } as any)).rejects.toThrow(
         CyberwareBadRequestError,
       );
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await expect(client.analyzeText({ text: 't' } as any)).rejects.toThrow(
+      await expect(client.analyzeText({ gameId: '1', contentType: 'text' } as any)).rejects.toThrow(
+        CyberwareBadRequestError,
+      );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await expect(client.analyzeText({ gameId: '1', contentType: 'text', rawContent: 'test' } as any)).rejects.toThrow(
         CyberwareBadRequestError,
       );
     });
 
-    it('should make a POST request to /sentiment/text with correct data and headers', async () => {
+    it('should make a POST request to /analyze with correct data and headers', async () => {
+      // API expects the request with automatically added SDK metadata
+      const expectedApiRequest = {
+        ...validRequest,
+        sdkName: '@cyberwareai/node-sdk',
+        sdkVersion: '0.1.3',
+      };
+      // API returns analysisId directly
+      const apiResponse = {
+        message: 'Analysis task accepted',
+        analysisId: 'text-uuid-123',
+      };
+      
       const scope = nock(LOCAL_TEST_URL) // Use localhost URL
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .post(SENTIMENT_TEXT_PATH, validRequest as any)
+        .post(ANALYZE_PATH, expectedApiRequest as any)
         .matchHeader('X-API-KEY', TEST_API_KEY)
         .matchHeader('Content-Type', 'application/json')
-        .reply(202, mockAcceptedResponse); // Reply with 202
+        .reply(202, apiResponse); // Reply with 202
 
       await client.analyzeText(validRequest);
       scope.done(); // Assert that the mock was called
     });
 
     it('should return the AnalysisTaskResponse on successful submission (202)', async () => {
+      // API returns analysisId directly
+      const apiResponse = {
+        message: 'Analysis task accepted',
+        analysisId: 'text-uuid-123',
+      };
+      
       nock(LOCAL_TEST_URL) // Use localhost URL
-        .post(SENTIMENT_TEXT_PATH)
-        .reply(202, mockAcceptedResponse);
+        .post(ANALYZE_PATH)
+        .reply(202, apiResponse);
 
       const result = await client.analyzeText(validRequest);
       expect(result).toEqual(mockAcceptedResponse);
@@ -120,13 +143,15 @@ describe('CyberwareClient', () => {
   // --- analyzeAudio Tests ---
   describe('analyzeAudio', () => {
     const validRequest: AudioAnalysisRequest = {
-      game_id: 'game-456',
-      audio_base64: 'base64encodedstring',
+      gameId: 'game-456',
+      contentType: 'audio',
+      rawContent: 'base64encodedstring',
+      sourcePlayerId: 'player-789',
     };
     // Define the expected 202 response
     const mockAcceptedResponse: AnalysisTaskResponse = {
       message: 'Audio analysis task accepted',
-      sentiment_data_id: 'audio-uuid-456',
+      analysisId: 'audio-uuid-456',
     };
 
     it('should throw BadRequestError if request is invalid', async () => {
@@ -137,31 +162,54 @@ describe('CyberwareClient', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await expect(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        client.analyzeAudio({ game_id: '1' } as any),
+        client.analyzeAudio({ gameId: '1' } as any),
       ).rejects.toThrow(CyberwareBadRequestError);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await expect(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        client.analyzeAudio({ audio_base64: 'abc' } as any),
+        client.analyzeAudio({ gameId: '1', contentType: 'audio' } as any),
+      ).rejects.toThrow(CyberwareBadRequestError);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await expect(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        client.analyzeAudio({ gameId: '1', contentType: 'audio', rawContent: 'abc' } as any),
       ).rejects.toThrow(CyberwareBadRequestError);
     });
 
-    it('should make a POST request to /sentiment/audio with correct data and headers', async () => {
+    it('should make a POST request to /analyze with correct data and headers', async () => {
+      // API expects the request with automatically added SDK metadata
+      const expectedApiRequest = {
+        ...validRequest,
+        sdkName: '@cyberwareai/node-sdk',
+        sdkVersion: '0.1.3',
+      };
+      // API returns analysisId directly
+      const apiResponse = {
+        message: 'Audio analysis task accepted',
+        analysisId: 'audio-uuid-456',
+      };
+      
       const scope = nock(LOCAL_TEST_URL) // Use localhost URL
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .post(SENTIMENT_AUDIO_PATH, validRequest as any)
+        .post(ANALYZE_PATH, expectedApiRequest as any)
         .matchHeader('X-API-KEY', TEST_API_KEY)
         .matchHeader('Content-Type', 'application/json')
-        .reply(202, mockAcceptedResponse); // Reply with 202
+        .reply(202, apiResponse); // Reply with 202
 
       await client.analyzeAudio(validRequest);
       scope.done(); // Assert that the mock was called
     });
 
     it('should return the AnalysisTaskResponse on successful submission (202)', async () => {
+      // API returns analysisId directly
+      const apiResponse = {
+        message: 'Audio analysis task accepted',
+        analysisId: 'audio-uuid-456',
+      };
+      
       nock(LOCAL_TEST_URL) // Use localhost URL
-        .post(SENTIMENT_AUDIO_PATH)
-        .reply(202, mockAcceptedResponse);
+        .post(ANALYZE_PATH)
+        .reply(202, apiResponse);
 
       const result = await client.analyzeAudio(validRequest);
       expect(result).toEqual(mockAcceptedResponse);
@@ -181,8 +229,10 @@ describe('CyberwareClient', () => {
     });
 
     const textRequest: TextAnalysisRequest = {
-      game_id: 'g1',
-      text: 'error test',
+      gameId: 'g1',
+      contentType: 'text',
+      rawContent: 'error test',
+      sourcePlayerId: 'player-error',
     };
     const errorResponse = { error: 'Something went wrong' };
 
@@ -222,7 +272,7 @@ describe('CyberwareClient', () => {
     testCases.forEach(({ status, errorClass, message }) => {
       it(`should throw ${errorClass.name} for status ${status}`, async () => {
         const scope = nock(LOCAL_TEST_URL) // Use localhost URL
-          .post(SENTIMENT_TEXT_PATH)
+          .post(ANALYZE_PATH)
           .reply(status, errorResponse);
         let caughtError: unknown = null;
 
@@ -247,7 +297,7 @@ describe('CyberwareClient', () => {
 
     it('should throw CyberwareApiError for unexpected network errors', async () => {
       const scope = nock(LOCAL_TEST_URL) // Use localhost URL
-        .post(SENTIMENT_TEXT_PATH)
+        .post(ANALYZE_PATH)
         .replyWithError('Network failure');
       let caughtError: unknown = null;
 
@@ -268,7 +318,7 @@ describe('CyberwareClient', () => {
     it('should throw CyberwareApiError for unexpected status codes', async () => {
       const errorData = { error: "I'm a teapot" };
       const scope = nock(LOCAL_TEST_URL) // Use localhost URL
-        .post(SENTIMENT_TEXT_PATH)
+        .post(ANALYZE_PATH)
         .reply(418, errorData);
       let caughtError: unknown = null;
 
@@ -291,22 +341,29 @@ describe('CyberwareClient', () => {
   // --- Retry Logic Tests (Basic) ---
   describe('Retry Logic', () => {
     const textRequest: TextAnalysisRequest = {
-      game_id: 'g1',
-      text: 'retry test',
+      gameId: 'g1',
+      contentType: 'text',
+      rawContent: 'retry test',
+      sourcePlayerId: 'player-retry',
     };
 
     // Skip this test for now due to unresolved issue with interceptor firing twice
     it.skip('should retry on 503 error and succeed on the second attempt', async () => {
-      // Define the expected 202 response for the second attempt
+      // API response with analysisId directly
+      const apiRetrySuccessResponse = {
+        message: 'Task accepted after retry',
+        analysisId: 'retry-uuid-789',
+      };
+      // Expected result 
       const mockRetrySuccessResponse: AnalysisTaskResponse = {
         message: 'Task accepted after retry',
-        sentiment_data_id: 'retry-uuid-789',
+        analysisId: 'retry-uuid-789',
       };
       const scope = nock(LOCAL_TEST_URL) // Use localhost URL
-        .post(SENTIMENT_TEXT_PATH) // First attempt
+        .post(ANALYZE_PATH) // First attempt
         .reply(503, { error: 'Service Unavailable' })
-        .post(SENTIMENT_TEXT_PATH) // Second attempt (after retry)
-        .reply(202, mockRetrySuccessResponse); // Should succeed with 202 now
+        .post(ANALYZE_PATH) // Second attempt (after retry)
+        .reply(202, apiRetrySuccessResponse); // Should succeed with 202 now
 
       const result = await client.analyzeText(textRequest);
       expect(result).toEqual(mockRetrySuccessResponse); // Expect AnalysisTaskResponse
@@ -315,7 +372,7 @@ describe('CyberwareClient', () => {
 
     it('should fail after exhausting retries on persistent 500 error', async () => {
       const scope = nock(LOCAL_TEST_URL) // Use localhost URL
-        .post(SENTIMENT_TEXT_PATH)
+        .post(ANALYZE_PATH)
         .times(4)
         .reply(500, { error: 'Internal Server Error' });
 
@@ -341,8 +398,10 @@ describe('CyberwareClient', () => {
     let consoleLogSpy: jest.SpyInstance;
     let consoleErrorSpy: jest.SpyInstance;
     const textRequest: TextAnalysisRequest = {
-      game_id: 'g1',
-      text: 'debug test',
+      gameId: 'g1',
+      contentType: 'text',
+      rawContent: 'debug test',
+      sourcePlayerId: 'player-debug',
     };
 
     beforeEach(() => {
@@ -358,11 +417,11 @@ describe('CyberwareClient', () => {
     });
 
     it('should not log requests or errors by default', async () => {
-      nock(LOCAL_TEST_URL).post(SENTIMENT_TEXT_PATH).reply(202, {}); // Reply 202 now
+      nock(LOCAL_TEST_URL).post(ANALYZE_PATH).reply(202, {}); // Reply 202 now
       await client.analyzeText(textRequest);
 
       nock(LOCAL_TEST_URL) // Use localhost URL
-        .post(SENTIMENT_TEXT_PATH)
+        .post(ANALYZE_PATH)
         .reply(500, { error: 'fail' });
       await expect(client.analyzeText(textRequest)).rejects.toThrow();
 
@@ -377,8 +436,8 @@ describe('CyberwareClient', () => {
 
       // Test logging on success
       nock(LOCAL_TEST_URL) // Use localhost URL
-        .post(SENTIMENT_TEXT_PATH)
-        .reply(202, { message: 'ok', sentiment_data_id: 'dbg-1' }); // Reply 202
+        .post(ANALYZE_PATH)
+        .reply(202, { message: 'ok', analysisId: 'dbg-1' }); // API returns analysisId directly
       await debugClient.analyzeText(textRequest);
       expect(consoleLogSpy).toHaveBeenCalledWith(
         'Cyberware SDK Request:',
@@ -392,7 +451,7 @@ describe('CyberwareClient', () => {
 
       // Test logging on error
       const errorResponse = { error: 'debug fail' };
-      nock(LOCAL_TEST_URL).post(SENTIMENT_TEXT_PATH).reply(400, errorResponse); // Use production URL
+      nock(LOCAL_TEST_URL).post(ANALYZE_PATH).reply(400, errorResponse); // Use production URL
       await expect(debugClient.analyzeText(textRequest)).rejects.toThrow();
       expect(consoleLogSpy).toHaveBeenCalledWith(
         'Cyberware SDK Request:',
