@@ -3,21 +3,21 @@
 echo "Running pre-push checks..."
 
 # Ensure formatting is clean (no changes needed)
-npm run format:check
+bun run format:check
 if [ $? -ne 0 ]; then
-  echo "Prettier check failed. Please run 'npm run format:all' and commit the changes."
+  echo "Prettier check failed. Please run 'bun run format:all' and commit the changes."
   exit 1
 fi
 
 # Lint
-npm run lint
+bun run lint
 if [ $? -ne 0 ]; then
   echo "Linting failed. Please fix lint errors before pushing."
   exit 1
 fi
 
 # Tests
-npm test
+bun test
 if [ $? -ne 0 ]; then
   echo "Tests failed. Please fix tests before pushing."
   exit 1
@@ -31,7 +31,7 @@ CURRENT_VERSION=$(node -p "require('./package.json').version")
 echo "Current version: $CURRENT_VERSION"
 
 # Increment patch version
-npm version patch --no-git-tag-version
+bun version patch --no-git-tag-version
 
 NEW_VERSION=$(node -p "require('./package.json').version")
 echo "New version: $NEW_VERSION"
