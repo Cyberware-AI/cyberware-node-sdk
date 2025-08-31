@@ -1,4 +1,7 @@
 import nock from 'nock';
+// Read SDK version from package.json to avoid hardcoding in tests
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { version: SDK_VERSION } = require('../package.json');
 import {
   CyberwareClient,
   CyberwareAuthenticationError,
@@ -105,7 +108,7 @@ describe('CyberwareClient', () => {
       const expectedApiRequest = {
         ...validRequest,
         sdkName: '@cyberwareai/node-sdk',
-        sdkVersion: '0.1.3',
+        sdkVersion: SDK_VERSION,
       };
       // API returns analysisId directly
       const apiResponse = {
@@ -181,7 +184,7 @@ describe('CyberwareClient', () => {
       const expectedApiRequest = {
         ...validRequest,
         sdkName: '@cyberwareai/node-sdk',
-        sdkVersion: '0.1.3',
+        sdkVersion: SDK_VERSION,
       };
       // API returns analysisId directly
       const apiResponse = {
