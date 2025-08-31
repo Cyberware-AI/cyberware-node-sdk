@@ -7,6 +7,7 @@ import {
   TextAnalysisRequest,
   AudioAnalysisRequest,
   AnalysisTaskResponse,
+  AnalysisResult,
   CyberwareApiError,
   CyberwareAuthenticationError,
   CyberwareBadRequestError,
@@ -61,6 +62,36 @@ async function runExamples() {
     console.log('Text Analysis Task Accepted:');
     console.log(`  Message: ${textResponse.message}`);
     console.log(`  Analysis ID: ${textResponse.analysisId}`);
+
+    // Example: Get analysis result (note: in real usage, you'd wait for completion or use webhooks)
+    console.log('\n--- Getting Analysis Result Example ---');
+    try {
+      console.log(`Getting analysis result for ID: ${textResponse.analysisId}`);
+      const result: AnalysisResult = await client.getAnalysisResult(
+        textResponse.analysisId,
+      );
+      console.log('Analysis Result:');
+      console.log(`  ID: ${result.id}`);
+      console.log(`  Status: ${result.status}`);
+      console.log(`  Content Type: ${result.contentType}`);
+      if (result.sentimentResult) {
+        console.log(
+          `  Sentiment Score: ${result.sentimentResult.sentimentScore}`,
+        );
+        console.log(
+          `  Dominant Emotion: ${result.sentimentResult.dominantEmotionId}`,
+        );
+      }
+      if (result.toxicityResult) {
+        console.log(`  Toxicity Score: ${result.toxicityResult.toxicityScore}`);
+      }
+      if (result.feedbackResult) {
+        console.log(`  Feedback Type: ${result.feedbackResult.type}`);
+        console.log(`  Feedback Category: ${result.feedbackResult.category}`);
+      }
+    } catch (error) {
+      handleApiError('Get Analysis Result', error);
+    }
   } catch (error) {
     handleApiError('Text Analysis', error);
   }

@@ -13,12 +13,14 @@ import {
   TextAnalysisRequest,
   AudioAnalysisRequest,
   AnalysisTaskResponse,
+  AnalysisResult,
 } from '../src'; // Import from the main entry point
 
 // Define the production base URL consistently with src/client.ts
 const LOCAL_TEST_URL = 'http://localhost:8080/api/v1'; // Use localhost for testing as requested
 const TEST_API_KEY = 'test-api-key';
 const ANALYZE_PATH = '/analyze';
+const RESULTS_PATH = '/results';
 
 describe('CyberwareClient', () => {
   let client: CyberwareClient;
@@ -74,7 +76,7 @@ describe('CyberwareClient', () => {
   describe('analyzeText', () => {
     const validRequest: TextAnalysisRequest = {
       gameId: 'game-123',
-      contentType: 'text',
+      // contentType now optional as it's auto-added
       rawContent: 'This is a test.',
       sourcePlayerId: 'player-456',
     };
@@ -94,23 +96,23 @@ describe('CyberwareClient', () => {
         CyberwareBadRequestError,
       );
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await expect(
-        client.analyzeText({ gameId: '1', contentType: 'text' } as any),
-      ).rejects.toThrow(CyberwareBadRequestError);
+      await expect(client.analyzeText({ gameId: '1' } as any)).rejects.toThrow(
+        CyberwareBadRequestError,
+      );
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await expect(
         client.analyzeText({
           gameId: '1',
-          contentType: 'text',
           rawContent: 'test',
         } as any),
       ).rejects.toThrow(CyberwareBadRequestError);
     });
 
     it('should make a POST request to /analyze with correct data and headers', async () => {
-      // API expects the request with automatically added SDK metadata
+      // API expects the request with automatically added SDK metadata and contentType
       const expectedApiRequest = {
         ...validRequest,
+        contentType: 'text',
         sdkName: '@cyberwareai/node-sdk',
         sdkVersion: SDK_VERSION,
       };
@@ -151,7 +153,7 @@ describe('CyberwareClient', () => {
   describe('analyzeAudio', () => {
     const validRequest: AudioAnalysisRequest = {
       gameId: 'game-456',
-      contentType: 'audio',
+      // contentType now optional as it's auto-added
       rawContent: 'base64encodedstring',
       sourcePlayerId: 'player-789',
     };
@@ -174,23 +176,23 @@ describe('CyberwareClient', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await expect(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        client.analyzeAudio({ gameId: '1', contentType: 'audio' } as any),
+        client.analyzeAudio({ gameId: '1' } as any),
       ).rejects.toThrow(CyberwareBadRequestError);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await expect(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         client.analyzeAudio({
           gameId: '1',
-          contentType: 'audio',
           rawContent: 'abc',
         } as any),
       ).rejects.toThrow(CyberwareBadRequestError);
     });
 
     it('should make a POST request to /analyze with correct data and headers', async () => {
-      // API expects the request with automatically added SDK metadata
+      // API expects the request with automatically added SDK metadata and contentType
       const expectedApiRequest = {
         ...validRequest,
+        contentType: 'audio',
         sdkName: '@cyberwareai/node-sdk',
         sdkVersion: SDK_VERSION,
       };
@@ -476,6 +478,225 @@ describe('CyberwareClient', () => {
           headers: expect.any(Object),
         },
       );
+    });
+  });
+
+  // --- getAnalysisResult Tests ---
+  describe('getAnalysisResult', () => {
+    const analysisId = 'analysis-123';
+    const mockAnalysisResult: AnalysisResult = {
+      id: analysisId,
+      gameId: 'game-123',
+      rawContent: 'This is a test.',
+      contentType: 'text',
+      sourcePlayerId: 'player-456',
+      serverId: 'server-123',
+      sourceType: 'chat',
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:01:00Z',
+      status: 'completed',
+      sentimentResult: {
+        sentimentScore: 0.8,
+        dominantEmotionId: 'joy',
+        confidence: 0.9,
+        explanation: 'Positive sentiment detected',
+        processedAt: '2024-01-01T00:01:00Z',
+      },
+      toxicityResult: {
+        toxicityScore: 0.1,
+        reason: null,
+        channel: 'chat',
+        timestamp: '2024-01-01T00:00:00Z',
+        serverId: 'server-123',
+        sourceType: 'chat',
+        sourcePlayerId: 'player-456',
+      },
+      feedbackResult: {
+        type: 'PRAISE',
+        category: 'GAMEPLAY',
+        priority: 'low',
+        summary: 'Player enjoyed the experience',
+        suggestedAction: 'Continue current approach',
+        processedAt: '2024-01-01T00:01:00Z',
+      },
+    };
+
+    it('should throw BadRequestError if analysisId is invalid', async () => {
+      await expect(client.getAnalysisResult('')).rejects.toThrow(
+        CyberwareBadRequestError,
+      );
+      await expect(client.getAnalysisResult('   ')).rejects.toThrow(
+        CyberwareBadRequestError,
+      );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await expect(client.getAnalysisResult(null as any)).rejects.toThrow(
+        CyberwareBadRequestError,
+      );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await expect(client.getAnalysisResult(123 as any)).rejects.toThrow(
+        CyberwareBadRequestError,
+      );
+    });
+
+    it('should make a GET request to /results/{id} with correct headers', async () => {
+      const scope = nock(LOCAL_TEST_URL)
+        .get(`${RESULTS_PATH}/${analysisId}`)
+        .matchHeader('X-API-KEY', TEST_API_KEY)
+        .reply(200, mockAnalysisResult);
+
+      await client.getAnalysisResult(analysisId);
+      scope.done(); // Assert that the mock was called
+    });
+
+    it('should return the AnalysisResult on successful request (200)', async () => {
+      nock(LOCAL_TEST_URL)
+        .get(`${RESULTS_PATH}/${analysisId}`)
+        .reply(200, mockAnalysisResult);
+
+      const result = await client.getAnalysisResult(analysisId);
+      expect(result).toEqual(mockAnalysisResult);
+    });
+
+    it('should properly encode analysisId with special characters', async () => {
+      const specialId = 'analysis/with:special@chars';
+      const encodedId = encodeURIComponent(specialId);
+      const scope = nock(LOCAL_TEST_URL)
+        .get(`${RESULTS_PATH}/${encodedId}`)
+        .reply(200, { ...mockAnalysisResult, id: specialId });
+
+      await client.getAnalysisResult(specialId);
+      scope.done();
+    });
+
+    it('should handle 404 errors correctly', async () => {
+      nock(LOCAL_TEST_URL)
+        .get(`${RESULTS_PATH}/${analysisId}`)
+        .reply(404, { error: 'Analysis result not found' });
+
+      await expect(client.getAnalysisResult(analysisId)).rejects.toThrow(
+        CyberwareNotFoundError,
+      );
+    });
+
+    it('should handle partial analysis results (pending status)', async () => {
+      const pendingResult: AnalysisResult = {
+        id: analysisId,
+        gameId: 'game-123',
+        rawContent: 'This is a test.',
+        contentType: 'text',
+        sourcePlayerId: 'player-456',
+        createdAt: '2024-01-01T00:00:00Z',
+        status: 'processing',
+        // No analysis results yet
+      };
+
+      nock(LOCAL_TEST_URL)
+        .get(`${RESULTS_PATH}/${analysisId}`)
+        .reply(200, pendingResult);
+
+      const result = await client.getAnalysisResult(analysisId);
+      expect(result).toEqual(pendingResult);
+      expect(result.status).toBe('processing');
+      expect(result.sentimentResult).toBeUndefined();
+      expect(result.toxicityResult).toBeUndefined();
+      expect(result.feedbackResult).toBeUndefined();
+    });
+  });
+
+  // --- Content Type Auto-Addition Tests ---
+  describe('Content Type Auto-Addition', () => {
+    it('should automatically add contentType: text for analyzeText', async () => {
+      const requestWithoutContentType: TextAnalysisRequest = {
+        gameId: 'game-123',
+        rawContent: 'This is a test.',
+        sourcePlayerId: 'player-456',
+      };
+
+      const expectedApiRequest = {
+        ...requestWithoutContentType,
+        contentType: 'text',
+        sdkName: '@cyberwareai/node-sdk',
+        sdkVersion: SDK_VERSION,
+      };
+
+      const scope = nock(LOCAL_TEST_URL)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .post(ANALYZE_PATH, expectedApiRequest as any)
+        .reply(202, { message: 'ok', analysisId: 'test-123' });
+
+      await client.analyzeText(requestWithoutContentType);
+      scope.done();
+    });
+
+    it('should automatically add contentType: audio for analyzeAudio', async () => {
+      const requestWithoutContentType: AudioAnalysisRequest = {
+        gameId: 'game-456',
+        rawContent: 'base64encodedstring',
+        sourcePlayerId: 'player-789',
+      };
+
+      const expectedApiRequest = {
+        ...requestWithoutContentType,
+        contentType: 'audio',
+        sdkName: '@cyberwareai/node-sdk',
+        sdkVersion: SDK_VERSION,
+      };
+
+      const scope = nock(LOCAL_TEST_URL)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .post(ANALYZE_PATH, expectedApiRequest as any)
+        .reply(202, { message: 'ok', analysisId: 'audio-123' });
+
+      await client.analyzeAudio(requestWithoutContentType);
+      scope.done();
+    });
+
+    it('should preserve explicitly set contentType in analyzeText', async () => {
+      const requestWithExplicitContentType: TextAnalysisRequest = {
+        gameId: 'game-123',
+        contentType: 'text', // Explicitly set
+        rawContent: 'This is a test.',
+        sourcePlayerId: 'player-456',
+      };
+
+      const expectedApiRequest = {
+        ...requestWithExplicitContentType,
+        contentType: 'text', // Should still be text
+        sdkName: '@cyberwareai/node-sdk',
+        sdkVersion: SDK_VERSION,
+      };
+
+      const scope = nock(LOCAL_TEST_URL)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .post(ANALYZE_PATH, expectedApiRequest as any)
+        .reply(202, { message: 'ok', analysisId: 'test-explicit' });
+
+      await client.analyzeText(requestWithExplicitContentType);
+      scope.done();
+    });
+
+    it('should preserve explicitly set contentType in analyzeAudio', async () => {
+      const requestWithExplicitContentType: AudioAnalysisRequest = {
+        gameId: 'game-456',
+        contentType: 'audio', // Explicitly set
+        rawContent: 'base64encodedstring',
+        sourcePlayerId: 'player-789',
+      };
+
+      const expectedApiRequest = {
+        ...requestWithExplicitContentType,
+        contentType: 'audio', // Should still be audio
+        sdkName: '@cyberwareai/node-sdk',
+        sdkVersion: SDK_VERSION,
+      };
+
+      const scope = nock(LOCAL_TEST_URL)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .post(ANALYZE_PATH, expectedApiRequest as any)
+        .reply(202, { message: 'ok', analysisId: 'audio-explicit' });
+
+      await client.analyzeAudio(requestWithExplicitContentType);
+      scope.done();
     });
   });
 });
