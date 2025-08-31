@@ -24,6 +24,23 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "Pre-push checks passed."
+
+# Auto-increment version before push
+echo "Auto-incrementing version..."
+CURRENT_VERSION=$(node -p "require('./package.json').version")
+echo "Current version: $CURRENT_VERSION"
+
+# Increment patch version
+npm version patch --no-git-tag-version
+
+NEW_VERSION=$(node -p "require('./package.json').version")
+echo "New version: $NEW_VERSION"
+
+# Add the version change to the current push
+git add package.json
+git commit --amend --no-edit
+
+echo "Version incremented to $NEW_VERSION and included in push."
 exit 0
 
 

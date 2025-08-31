@@ -1,4 +1,4 @@
-name: Build and Publish (main)
+name: Build and Publish
 
 on:
   push:
@@ -12,10 +12,8 @@ jobs:
   build-and-publish:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       packages: write
-      actions: read
-      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -39,23 +37,10 @@ jobs:
       - name: Install dependencies (bun)
         run: bun install --frozen-lockfile || bun install
 
-      - name: Increment version
+      - name: Display version
         run: |
-          # Get current version for logging
           CURRENT_VERSION=$(node -p "require('./package.json').version")
-          echo "Current version: $CURRENT_VERSION"
-          
-          # Increment patch version
-          npm version patch --no-git-tag-version
-          
-          # Get new version for logging
-          NEW_VERSION=$(node -p "require('./package.json').version")
-          echo "New version: $NEW_VERSION"
-          
-          # Create git tag for the version (no push needed)
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git tag "v$NEW_VERSION"
+          echo "Publishing version: $CURRENT_VERSION"
 
       - name: Build package
         run: bun run build || npm run build
